@@ -1,0 +1,58 @@
+# ================================
+# Python
+# ================================
+
+# Virtual environment
+backend/venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+
+# ================================
+# Next.js / Node.js
+# ================================
+
+# Installed Node packages
+frontend/node_modules/
+
+# Next.js generated files
+frontend/.next/
+frontend/out/
+
+# Environment variables
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+
+# ================================
+# Operating System
+# ================================
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+
+
+# ================================
+# IDE / Editor
+# ================================
+
+.vscode/
+.idea/
