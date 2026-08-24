@@ -1,16 +1,62 @@
-from fastapi import FastAPI, Depends
+from datetime import datetime, timedelta
+
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import (
+    OAuth2PasswordBearer,
+    OAuth2PasswordRequestForm
+)
+
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+
 from sqlalchemy.orm import Session
 
 from .database import SessionLocal
-from .models import Employee, Activity
-from .schemas import EmployeeCreate, ActivityCreate
+from .models import Employee, Activity, User
+from .schemas import EmployeeCreate, ActivityCreate, UserCreate
+from .mongodb import activity_logs
 
 
 app = FastAPI()
 
 
 # ============================================================
-# DATABASE CONNECTION
+# CORS
+# ============================================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ============================================================
+# AUTHENTICATION SETTINGS
+# ============================================================
+
+SECRET_KEY = "itbis-secret-key-change-this-later"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto"
+)
+
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="login"
+)
+
+
+# ============================================================
+# DATABASE DEPENDENCY
 # ============================================================
 
 def get_db():
@@ -23,32 +69,294 @@ def get_db():
 
 
 # ============================================================
-# BASIC ROUTES
+# PASSWORD FUNCTIONS
+# ============================================================
+
+def hash_password(password: str):
+    return pwd_context.hash(password)
+
+
+def verify_password(
+    password: str,
+    hashed_password: str
+):
+    return pwd_context.verify(
+        password,
+        hashed_password
+    )
+
+
+# ============================================================
+# JWT FUNCTIONS
+# ============================================================
+
+def create_access_token(data: dict):
+
+    to_encode = data.copy()
+
+    expire = datetime.utcnow() + timedelta(
+        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+
+    to_encode.update({
+        "exp": expire
+    })
+
+    return jwt.encode(
+        to_encode,
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
+
+
+# ============================================================
+# GET CURRENT USER
+# ============================================================
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
+
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={
+            "WWW-Authenticate": "Bearer"
+        }
+    )
+
+    try:
+
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+
+        username = payload.get("sub")
+
+        if username is None:
+            raise credentials_exception
+
+    except JWTError:
+        raise credentials_exception
+
+    user = db.query(User).filter(
+        User.username == username
+    ).first()
+
+    if user is None:
+        raise credentials_exception
+
+    return user
+
+
+# ============================================================
+# ROLE-BASED ACCESS CONTROL
+# ============================================================
+
+def require_role(*allowed_roles):
+
+    def checker(
+        current_user: User = Depends(
+            get_current_user
+        )
+    ):
+
+        if current_user.role not in allowed_roles:
+
+            raise HTTPException(
+                status_code=403,
+                detail="Not authorized for this action"
+            )
+
+        return current_user
+
+    return checker
+
+
+# ============================================================
+# HOME
 # ============================================================
 
 @app.get("/")
 def home():
+
     return {
         "status": "ITBIS backend is running"
     }
 
 
+# ============================================================
+# HELLO
+# ============================================================
+
 @app.get("/hello")
 def hello():
+
     return {
         "message": "Hello Subramanya!"
     }
 
 
 # ============================================================
-# EMPLOYEE APIs
+# SIGNUP
+# ============================================================
+
+@app.post("/signup")
+def signup(
+    user: UserCreate,
+    db: Session = Depends(get_db)
+):
+
+    existing_user = db.query(User).filter(
+        User.username == user.username
+    ).first()
+
+    if existing_user:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Username already exists"
+        )
+
+    if user.role not in [
+        "admin",
+        "analyst",
+        "employee"
+    ]:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid role"
+        )
+
+    hashed_password = hash_password(
+        user.password
+    )
+
+    new_user = User(
+        username=user.username,
+        hashed_password=hashed_password,
+        role=user.role
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {
+        "message": "User created successfully",
+        "username": new_user.username,
+        "role": new_user.role
+    }
+
+
+# ============================================================
+# LOGIN
+# ============================================================
+
+@app.post("/login")
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+
+    existing_user = db.query(User).filter(
+        User.username == form_data.username
+    ).first()
+
+    if not existing_user:
+
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password"
+        )
+
+    password_valid = verify_password(
+        form_data.password,
+        existing_user.hashed_password
+    )
+
+    if not password_valid:
+
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password"
+        )
+
+    access_token = create_access_token({
+        "sub": existing_user.username,
+        "role": existing_user.role
+    })
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "username": existing_user.username,
+        "role": existing_user.role
+    }
+
+
+# ============================================================
+# CURRENT USER
+# ============================================================
+
+@app.get("/me")
+def get_me(
+    current_user: User = Depends(
+        get_current_user
+    )
+):
+
+    return {
+        "username": current_user.username,
+        "role": current_user.role
+    }
+
+
+# ============================================================
+# EMPLOYEES - GET ALL
+# ============================================================
+
+@app.get("/employees")
+def get_employees(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        get_current_user
+    )
+):
+
+    employees = db.query(Employee).all()
+
+    return employees
+
+
+# ============================================================
+# EMPLOYEES - CREATE
 # ============================================================
 
 @app.post("/employees")
 def create_employee(
     employee: EmployeeCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role("admin")
+    )
 ):
+
+    existing_employee = db.query(Employee).filter(
+        Employee.employee_id == employee.employee_id
+    ).first()
+
+    if existing_employee:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Employee ID already exists"
+        )
+
     new_employee = Employee(
         employee_id=employee.employee_id,
         name=employee.name,
@@ -69,154 +377,124 @@ def create_employee(
     }
 
 
-@app.get("/employees")
-def get_employees(
-    db: Session = Depends(get_db)
+# ============================================================
+# EMPLOYEES - UPDATE
+# ============================================================
+
+@app.put("/employees/{employee_id}")
+def update_employee(
+    employee_id: str,
+    employee: EmployeeCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role("admin")
+    )
 ):
-    employees = db.query(Employee).all()
 
-    return employees
+    existing_employee = db.query(Employee).filter(
+        Employee.employee_id == employee_id
+    ).first()
 
+    if existing_employee is None:
 
-# ============================================================
-# RISK ANALYSIS ENGINE
-# ============================================================
+        raise HTTPException(
+            status_code=404,
+            detail="Employee not found"
+        )
 
-def calculate_risk(activity):
-    """
-    Calculate a basic insider-threat risk score.
+    # Check if the new employee ID belongs
+    # to another employee
+    if employee.employee_id != employee_id:
 
-    Score:
-        0 - 29   = Low
-        30 - 59  = Medium
-        60 - 79  = High
-        80 - 100 = Critical
-    """
+        duplicate_employee = db.query(Employee).filter(
+            Employee.employee_id == employee.employee_id
+        ).first()
 
-    score = 0
-    reasons = []
+        if duplicate_employee:
 
-    activity_type = activity.activity_type.upper()
-    resource = (activity.resource or "").lower()
-
-    # --------------------------------------------------------
-    # Activity type
-    # --------------------------------------------------------
-
-    if activity_type == "LOGIN":
-        score += 10
-
-    elif activity_type == "FILE_ACCESS":
-        score += 20
-        reasons.append("File access detected")
-
-    elif activity_type == "FILE_DOWNLOAD":
-        score += 40
-        reasons.append("File download detected")
-
-    elif activity_type == "DATA_EXPORT":
-        score += 60
-        reasons.append("Data export detected")
-
-    elif activity_type == "USB_ACCESS":
-        score += 50
-        reasons.append("USB device access detected")
-
-    elif activity_type == "PRIVILEGE_CHANGE":
-        score += 70
-        reasons.append("Privilege change detected")
-
-    elif activity_type == "LOGIN_FAILED":
-        score += 30
-        reasons.append("Failed login detected")
-
-    else:
-        score += 10
-        reasons.append("Unusual activity type")
-
-
-    # --------------------------------------------------------
-    # Resource analysis
-    # --------------------------------------------------------
-
-    sensitive_keywords = [
-        "confidential",
-        "secret",
-        "password",
-        "credential",
-        "financial",
-        "customer",
-        "database",
-        "employee",
-        "private"
-    ]
-
-    for keyword in sensitive_keywords:
-        if keyword in resource:
-            score += 30
-            reasons.append(
-                "Sensitive resource detected: " + keyword
+            raise HTTPException(
+                status_code=400,
+                detail="New employee ID already exists"
             )
-            break
 
+    existing_employee.employee_id = employee.employee_id
+    existing_employee.name = employee.name
+    existing_employee.department = employee.department
+    existing_employee.designation = employee.designation
+    existing_employee.manager_id = employee.manager_id
+    existing_employee.device_info = employee.device_info
+    existing_employee.access_privileges = employee.access_privileges
 
-    # --------------------------------------------------------
-    # IP address analysis
-    # --------------------------------------------------------
-
-    if activity.ip_address:
-
-        suspicious_ips = [
-            "10.0.0.99",
-            "192.168.1.99",
-            "172.16.0.99"
-        ]
-
-        if activity.ip_address in suspicious_ips:
-            score += 30
-            reasons.append("Suspicious IP address detected")
-
-
-    # --------------------------------------------------------
-    # Limit score to 100
-    # --------------------------------------------------------
-
-    if score > 100:
-        score = 100
-
-
-    # --------------------------------------------------------
-    # Risk level
-    # --------------------------------------------------------
-
-    if score >= 80:
-        risk_level = "CRITICAL"
-
-    elif score >= 60:
-        risk_level = "HIGH"
-
-    elif score >= 30:
-        risk_level = "MEDIUM"
-
-    else:
-        risk_level = "LOW"
-
+    db.commit()
+    db.refresh(existing_employee)
 
     return {
-        "risk_score": score,
-        "risk_level": risk_level,
-        "reasons": reasons
+        "message": "Employee updated successfully",
+        "employee_id": existing_employee.employee_id
     }
 
 
 # ============================================================
-# ACTIVITY APIs
+# EMPLOYEES - DELETE
+# ============================================================
+
+@app.delete("/employees/{employee_id}")
+def delete_employee(
+    employee_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role("admin")
+    )
+):
+
+    existing_employee = db.query(Employee).filter(
+        Employee.employee_id == employee_id
+    ).first()
+
+    if existing_employee is None:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Employee not found"
+        )
+
+    db.delete(existing_employee)
+    db.commit()
+
+    return {
+        "message": "Employee deleted successfully",
+        "employee_id": employee_id
+    }
+
+
+# ============================================================
+# ACTIVITIES - GET
+# ============================================================
+
+@app.get("/activities")
+def get_activities(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        get_current_user
+    )
+):
+
+    activities = db.query(Activity).all()
+
+    return activities
+
+
+# ============================================================
+# ACTIVITIES - CREATE
 # ============================================================
 
 @app.post("/activities")
 def create_activity(
     activity: ActivityCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        get_current_user
+    )
 ):
 
     new_activity = Activity(
@@ -232,44 +510,143 @@ def create_activity(
     db.commit()
     db.refresh(new_activity)
 
-    # Calculate risk for this activity
-    risk = calculate_risk(new_activity)
-
     return {
         "message": "Activity created successfully",
-        "activity_id": new_activity.id,
-        "employee_id": new_activity.employee_id,
-        "activity_type": new_activity.activity_type,
-        "risk_score": risk["risk_score"],
-        "risk_level": risk["risk_level"],
-        "reasons": risk["reasons"]
+        "activity_id": new_activity.id
     }
 
 
-@app.get("/activities")
-def get_activities(
+# ============================================================
+# ADMIN - GET USERS
+# ============================================================
+
+@app.get("/admin/users")
+def admin_users(
+    current_user: User = Depends(
+        require_role("admin")
+    ),
     db: Session = Depends(get_db)
 ):
 
-    activities = db.query(Activity).all()
+    users = db.query(User).all()
 
-    results = []
+    return [
+        {
+            "id": user.id,
+            "username": user.username,
+            "role": user.role
+        }
+        for user in users
+    ]
 
-    for activity in activities:
 
-        risk = calculate_risk(activity)
+# ============================================================
+# SECURITY OVERVIEW
+# ============================================================
 
-        results.append({
-            "id": activity.id,
-            "employee_id": activity.employee_id,
-            "activity_type": activity.activity_type,
-            "resource": activity.resource,
-            "timestamp": activity.timestamp,
-            "ip_address": activity.ip_address,
-            "device": activity.device,
-            "risk_score": risk["risk_score"],
-            "risk_level": risk["risk_level"],
-            "reasons": risk["reasons"]
-        })
+@app.get("/security/overview")
+def security_overview(
+    current_user: User = Depends(
+        require_role("admin", "analyst")
+    )
+):
 
-    return results
+    return {
+        "message": "Security overview accessible",
+        "username": current_user.username,
+        "role": current_user.role
+    }
+
+
+# ============================================================
+# MONGODB - INGEST ACTIVITY LOG
+# ============================================================
+
+@app.post("/logs/ingest")
+def ingest_log(
+    log: dict,
+    current_user: User = Depends(
+        get_current_user
+    )
+):
+
+    log_document = {
+        "employee_id": log.get(
+            "employee_id"
+        ),
+
+        "activity_type": log.get(
+            "activity_type"
+        ),
+
+        "resource": log.get(
+            "resource"
+        ),
+
+        "timestamp": log.get(
+            "timestamp"
+        ),
+
+        "ip_address": log.get(
+            "ip_address"
+        ),
+
+        "device": log.get(
+            "device"
+        ),
+
+        "ingested_by": current_user.username,
+
+        "ingested_at": datetime.utcnow()
+    }
+
+    result = activity_logs.insert_one(
+        log_document
+    )
+
+    return {
+        "message": "Activity log stored successfully",
+        "log_id": str(
+            result.inserted_id
+        )
+    }
+
+
+# ============================================================
+# MONGODB - GET ACTIVITY LOGS
+# ============================================================
+
+@app.get("/logs")
+def get_logs(
+    current_user: User = Depends(
+        get_current_user
+    )
+):
+
+    logs = list(
+        activity_logs.find(
+            {},
+            {
+                "_id": 1,
+                "employee_id": 1,
+                "activity_type": 1,
+                "resource": 1,
+                "timestamp": 1,
+                "ip_address": 1,
+                "device": 1,
+                "ingested_by": 1,
+                "ingested_at": 1
+            }
+        ).sort(
+            "ingested_at",
+            -1
+        )
+    )
+
+    for log in logs:
+
+        log["_id"] = str(
+            log["_id"]
+        )
+
+    return logs
