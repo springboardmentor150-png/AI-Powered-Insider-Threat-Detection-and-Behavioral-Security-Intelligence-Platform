@@ -34,3 +34,21 @@ def create_activity(activity: ActivityLogCreate):
         "message": "Activity logged successfully",
         "id": str(result.inserted_id),
     }
+
+
+@app.get("/activity/{employee_code}")
+def get_employee_activity(employee_code: str):
+    documents = list(
+        activity_logs.find(
+            {"employee_code": employee_code}
+        ).sort("timestamp", -1)
+    )
+
+    for document in documents:
+        document["id"] = str(document.pop("_id"))
+
+    return {
+        "employee_code": employee_code,
+        "count": len(documents),
+        "activities": documents,
+    }
