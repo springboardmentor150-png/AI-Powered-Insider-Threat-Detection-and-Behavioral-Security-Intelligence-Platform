@@ -1,22 +1,16 @@
-from fastapi import Header, HTTPException
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from .jwt_auth import decode_access_token
 
 
-def get_current_user(authorization: str | None = Header(default=None)):
-    if not authorization:
-        raise HTTPException(
-            status_code=401,
-            detail="Authorization header required",
-        )
+security = HTTPBearer()
 
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid authorization header",
-        )
 
-    token = authorization.replace("Bearer ", "", 1)
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    token = credentials.credentials
 
     try:
         payload = decode_access_token(token)
@@ -30,20 +24,10 @@ def get_current_user(authorization: str | None = Header(default=None)):
 
 
 def require_role(*allowed_roles):
-    def checker(authorization: str | None = Header(default=None)):
-        if not authorization:
-            raise HTTPException(
-                status_code=401,
-                detail="Authorization header required",
-            )
-
-        if not authorization.startswith("Bearer "):
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid authorization header",
-            )
-
-        token = authorization.replace("Bearer ", "", 1)
+    def checker(
+        credentials: HTTPAuthorizationCredentials = Depends(security),
+    ):
+        token = credentials.credentials
 
         try:
             payload = decode_access_token(token)

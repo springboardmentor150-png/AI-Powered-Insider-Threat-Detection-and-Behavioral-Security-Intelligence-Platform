@@ -24,6 +24,13 @@ class EmployeeCreate(BaseModel):
     role: str = Field(min_length=1, max_length=100)
 
 
+class EmployeeUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=150)
+    email: str = Field(min_length=1, max_length=255)
+    department: str = Field(min_length=1, max_length=100)
+    role: str = Field(min_length=1, max_length=100)
+
+
 class EmployeeResponse(EmployeeCreate):
     id: int
     created_at: datetime

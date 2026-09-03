@@ -10,7 +10,7 @@ from .dependencies import get_current_user, require_role
 from .jwt_auth import create_access_token
 from .models import Employee, User
 from .mongo import activity_logs
-from .schemas import ActivityLogCreate, EmployeeCreate
+from .schemas import ActivityLogCreate, EmployeeCreate, EmployeeUpdate
 
 
 app = FastAPI(title="ITBIS API")
@@ -30,7 +30,10 @@ def health_check():
 
 
 @app.post("/activity")
-def create_activity(activity: ActivityLogCreate):
+def create_activity(
+    activity: ActivityLogCreate,
+    _current_user=Depends(get_current_user),
+):
     document = activity.model_dump()
     document["timestamp"] = datetime.now(timezone.utc)
 
@@ -42,8 +45,28 @@ def create_activity(activity: ActivityLogCreate):
     }
 
 
+@app.get("/activity")
+def get_all_activity(
+    _current_user=Depends(get_current_user),
+):
+    documents = list(
+        activity_logs.find().sort("timestamp", -1)
+    )
+
+    for document in documents:
+        document["id"] = str(document.pop("_id"))
+
+    return {
+        "count": len(documents),
+        "activities": documents,
+    }
+
+
 @app.get("/activity/{employee_code}")
-def get_employee_activity(employee_code: str):
+def get_employee_activity(
+    employee_code: str,
+    _current_user=Depends(get_current_user),
+):
     documents = list(
         activity_logs.find(
             {"employee_code": employee_code}
@@ -198,6 +221,89 @@ def create_employee(
         "email": new_employee.email,
         "department": new_employee.department,
         "role": new_employee.role,
+    }
+
+
+@app.put("/employees/{employee_code}")
+def update_employee(
+    employee_code: str,
+    employee: EmployeeUpdate,
+    current_user=Depends(require_role("admin")),
+    db: Session = Depends(get_db),
+):
+    existing_employee = (
+        db.query(Employee)
+        .filter(Employee.employee_code == employee_code)
+        .first()
+    )
+
+    if not existing_employee:
+        raise HTTPException(
+            status_code=404,
+            detail="Employee not found",
+        )
+
+    existing_email = (
+        db.query(Employee)
+        .filter(
+            Employee.email == employee.email,
+            Employee.id != existing_employee.id,
+        )
+        .first()
+    )
+
+    if existing_email:
+        raise HTTPException(
+            status_code=400,
+            detail="Employee email already registered",
+        )
+
+    existing_employee.name = employee.name
+    existing_employee.email = employee.email
+    existing_employee.department = employee.department
+    existing_employee.role = employee.role
+
+    db.commit()
+    db.refresh(existing_employee)
+
+    return {
+        "message": "Employee updated successfully",
+        "id": existing_employee.id,
+        "employee_code": existing_employee.employee_code,
+        "name": existing_employee.name,
+        "email": existing_employee.email,
+        "department": existing_employee.department,
+        "role": existing_employee.role,
+        "created_at": existing_employee.created_at,
+    }
+
+
+@app.delete("/employees/{employee_code}")
+def delete_employee(
+    employee_code: str,
+    current_user=Depends(require_role("admin")),
+    db: Session = Depends(get_db),
+):
+    employee = (
+        db.query(Employee)
+        .filter(Employee.employee_code == employee_code)
+        .first()
+    )
+
+    if not employee:
+        raise HTTPException(
+            status_code=404,
+            detail="Employee not found",
+        )
+
+    deleted_employee_code = employee.employee_code
+
+    db.delete(employee)
+    db.commit()
+
+    return {
+        "message": "Employee deleted successfully",
+        "employee_code": deleted_employee_code,
     }
 
 
