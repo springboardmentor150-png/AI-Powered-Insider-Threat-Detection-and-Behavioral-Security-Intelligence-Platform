@@ -1,0 +1,86 @@
+[
+  {
+    "employee_id": "EMP9999",
+    "avg_daily_events": 25,
+    "avg_daily_download_mb": 18.5,
+    "allowed_devices": [
+      "Kali Linux 2026.1"
+    ],
+    "typical_work_hours": "09:00 - 18:00 UTC",
+    "last_updated": "2026-09-02T13:41:07.547855",
+    "_id": "c79c356b-ac66-4007-9eaf-9d24099022b7",
+    "timestamp": "2026-09-02T13:41:07.552463"
+  },
+  {
+    "employee_id": "EMP1006",
+    "avg_daily_events": 30,
+    "avg_daily_download_mb": 25.0,
+    "allowed_devices": [
+      "Precision 5570 - Host: sophia-dba-01"
+    ],
+    "typical_work_hours": "09:00 - 18:00 UTC",
+    "last_updated": "2026-09-02T13:41:06.388391",
+    "_id": "56a79c42-0cb9-41b4-be58-1ad8b4422faf",
+    "timestamp": "2026-09-02T13:41:06.388412"
+  },
+  {
+    "employee_id": "EMP1005",
+    "avg_daily_events": 30,
+    "avg_daily_download_mb": 25.0,
+    "allowed_devices": [
+      "MacBook Air - Host: liam-fe-08"
+    ],
+    "typical_work_hours": "09:00 - 18:00 UTC",
+    "last_updated": "2026-09-02T13:41:06.387543",
+    "_id": "06de80b9-c12f-4e63-a4f2-02c06303cc8e",
+    "timestamp": "2026-09-02T13:41:06.387563"
+  },
+  {
+    "employee_id": "EMP1004",
+    "avg_daily_events": 30,
+    "avg_daily_download_mb": 25.0,
+    "allowed_devices": [
+      "Lenovo ThinkPad - Host: amina-hr-01"
+    ],
+    "typical_work_hours": "09:00 - 18:00 UTC",
+    "last_updated": "2026-09-02T13:41:06.386656",
+    "_id": "e48449b8-84b9-4779-94d7-eb50d1866cd5",
+    "timestamp": "2026-09-02T13:41:06.386677"
+  },
+  {
+    "employee_id": "EMP1003",
+    "avg_daily_events": 30,
+    "avg_daily_download_mb": 25.0,
+    "allowed_devices": [
+      "ThinkPad P1 - Host: devon-ops-linux"
+    ],
+    "typical_work_hours": "09:00 - 18:00 UTC",
+    "last_updated": "2026-09-02T13:41:06.385831",
+    "_id": "7acaa2fa-24b9-471d-a796-7793d478c817",
+    "timestamp": "2026-09-02T13:41:06.385854"
+  },
+  {
+    "employee_id": "EMP1002",
+    "avg_daily_events": 30,
+    "avg_daily_download_mb": 25.0,
+    "allowed_devices": [
+      "Dell XPS 15 - Host: jhayes-fin-02"
+    ],
+    "typical_work_hours": "09:00 - 18:00 UTC",
+    "last_updated": "2026-09-02T13:41:06.384853",
+    "_id": "389f1b5e-fed9-4f37-b150-9709c87315bc",
+    "timestamp": "2026-09-02T13:41:06.384883"
+  },
+  {
+    "employee_id": "EMP1001",
+    "avg_daily_events": 30,
+    "avg_daily_download_mb": 25.0,
+    "allowed_devices": [
+      "MacBook Pro M3 - Host: elena-mbp-eng"
+    ],
+    "typical_work_hours": "09:00 - 18:00 UTC",
+    "last_updated": "2026-09-02T13:41:06.383713",
+    "_id": "8a5cf2a4-2e29-4588-a9e4-fe18a8769e15",
+    "timestamp": "2026-09-02T13:41:06.383748"
+  }
+]

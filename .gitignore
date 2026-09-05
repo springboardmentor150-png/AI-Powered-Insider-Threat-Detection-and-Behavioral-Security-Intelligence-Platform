@@ -15,4 +15,5 @@ venv/
 .env.local
 .DS_Store
 Thumbs.db
-backend/data/
+backend/data/ITBIS(1).zip
+itbis (2).zip
