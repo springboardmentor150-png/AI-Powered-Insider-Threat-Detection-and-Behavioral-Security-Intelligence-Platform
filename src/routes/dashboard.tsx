@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -10,13 +11,19 @@ import {
   Users,
   UserCog,
 } from "lucide-react";
+import { apiClient } from "@/api/client";
 import {
-  api,
   formatTimestamp,
+  investigations as mockInvestigations,
   riskLevels,
   ROLES,
+  type ActivityLog,
+  type Employee,
+  type Investigation,
+  type PlatformUser,
   type RiskLevel,
   type Role,
+  type ThreatAlert,
 } from "@/api/mockData";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
@@ -57,12 +64,34 @@ export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
 });
 
-const employees = api.getEmployees();
-const alerts = api.getAlerts();
-const logs = api.getActivityLogs();
-const users = api.getPlatformUsers();
-const investigations = api.getInvestigations();
+// ── Shared data hook ──────────────────────────────────────────────────────────
+function useDashboardData() {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [alerts, setAlerts] = useState<ThreatAlert[]>([]);
+  const [logs, setLogs] = useState<ActivityLog[]>([]);
+  const [users, setUsers] = useState<PlatformUser[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    Promise.all([
+      apiClient.getEmployees(),
+      apiClient.getAlerts(),
+      apiClient.getActivityLogs(),
+      apiClient.getPlatformUsers(),
+    ])
+      .then(([emps, alts, lgss, usrs]) => {
+        setEmployees(emps);
+        setAlerts(alts);
+        setLogs(lgss);
+        setUsers(usrs);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { employees, alerts, logs, users, loading };
+}
+
+// ── Stat card ─────────────────────────────────────────────────────────────────
 function StatCard({
   label,
   value,
@@ -100,9 +129,20 @@ function StatCard({
   );
 }
 
+// ── Page ──────────────────────────────────────────────────────────────────────
 function DashboardPage() {
   const { session } = useAuth();
   const role = session!.role;
+  const data = useDashboardData();
+
+  if (data.loading) {
+    return (
+      <AppShell>
+        <PageHeader title={`${role} dashboard`} description="Loading…" />
+        <p className="py-10 text-center font-mono text-sm text-muted-foreground">Loading dashboard data…</p>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>
@@ -110,16 +150,27 @@ function DashboardPage() {
         title={`${role} dashboard`}
         description={`Behavioural intelligence tailored to your role. Signed in as ${session!.email}.`}
       />
-      {role === "Administrator" ? <AdminDashboard /> : null}
-      {role === "Security Manager" ? <ManagerDashboard /> : null}
+      {role === "Administrator" ? <AdminDashboard {...data} /> : null}
+      {role === "Security Manager" ? <ManagerDashboard {...data} /> : null}
       {role === "Security Analyst" || role === "SOC Engineer" ? (
-        <AnalystDashboard role={role} />
+        <AnalystDashboard role={role} {...data} />
       ) : null}
     </AppShell>
   );
 }
 
-function AdminDashboard() {
+// ── Admin dashboard ───────────────────────────────────────────────────────────
+function AdminDashboard({
+  employees,
+  alerts,
+  logs,
+  users,
+}: {
+  employees: Employee[];
+  alerts: ThreatAlert[];
+  logs: ActivityLog[];
+  users: PlatformUser[];
+}) {
   const activeIncidents = alerts.filter((a) => a.status !== "Resolved").length;
   const byRole = ROLES.map((r) => ({ role: r, count: users.filter((u) => u.role === r).length }));
 
@@ -128,13 +179,7 @@ function AdminDashboard() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total employees" value={employees.length} icon={Users} hint="Monitored identities" />
         <StatCard label="Total alerts" value={alerts.length} icon={BellRing} hint="All time" tone="high" />
-        <StatCard
-          label="Active incidents"
-          value={activeIncidents}
-          icon={ShieldAlert}
-          hint="Open or investigating"
-          tone="critical"
-        />
+        <StatCard label="Active incidents" value={activeIncidents} icon={ShieldAlert} hint="Open or investigating" tone="critical" />
         <StatCard label="Platform users" value={users.length} icon={UserCog} hint="Console accounts" tone="low" />
       </div>
 
@@ -150,7 +195,7 @@ function AdminDashboard() {
                   <span>{role}</span>
                   <span className="font-mono text-xs text-muted-foreground">{count}</span>
                 </div>
-                <Progress value={(count / users.length) * 100} />
+                <Progress value={users.length > 0 ? (count / users.length) * 100 : 0} />
               </div>
             ))}
           </CardContent>
@@ -208,7 +253,14 @@ function QuickLink({
   );
 }
 
-function ManagerDashboard() {
+// ── Manager dashboard ─────────────────────────────────────────────────────────
+function ManagerDashboard({
+  employees,
+  alerts,
+}: {
+  employees: Employee[];
+  alerts: ThreatAlert[];
+}) {
   const counts = riskLevels.map((level) => ({
     level,
     count: employees.filter((e) => e.risk_level === level).length,
@@ -261,15 +313,11 @@ function ManagerDashboard() {
                 {alerts.slice(0, 7).map((a) => (
                   <TableRow key={a.id}>
                     <TableCell className="font-medium">{a.employee_name}</TableCell>
-                    <TableCell>
-                      <SeverityBadge severity={a.severity} />
-                    </TableCell>
+                    <TableCell><SeverityBadge severity={a.severity} /></TableCell>
                     <TableCell className="hidden max-w-[22rem] truncate text-muted-foreground md:table-cell">
                       {a.message}
                     </TableCell>
-                    <TableCell>
-                      <AlertStatusBadge status={a.status} />
-                    </TableCell>
+                    <TableCell><AlertStatusBadge status={a.status} /></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -302,8 +350,19 @@ function ManagerDashboard() {
   );
 }
 
-function AnalystDashboard({ role }: { role: Role }) {
-  const assigned = api.getAlertsForRole(role);
+// ── Analyst / SOC dashboard ───────────────────────────────────────────────────
+function AnalystDashboard({
+  role,
+  alerts,
+  logs,
+}: {
+  role: Role;
+  alerts: ThreatAlert[];
+  logs: ActivityLog[];
+}) {
+  // investigations are still mock (no backend endpoint for M1)
+  const investigations: Investigation[] = mockInvestigations;
+  const assigned = alerts.filter((a) => a.assigned_to === role);
   const open = assigned.filter((a) => a.status !== "Resolved");
 
   return (
@@ -343,14 +402,17 @@ function AnalystDashboard({ role }: { role: Role }) {
                       <span className="block max-w-[20rem] truncate text-sm">{a.message}</span>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">{a.employee_name}</TableCell>
-                    <TableCell>
-                      <SeverityBadge severity={a.severity} />
-                    </TableCell>
-                    <TableCell>
-                      <AlertStatusBadge status={a.status} />
-                    </TableCell>
+                    <TableCell><SeverityBadge severity={a.severity} /></TableCell>
+                    <TableCell><AlertStatusBadge status={a.status} /></TableCell>
                   </TableRow>
                 ))}
+                {assigned.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                      No alerts assigned to this role.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -393,7 +455,7 @@ function AnalystDashboard({ role }: { role: Role }) {
   );
 }
 
-function LogTable({ rows }: { rows: ReturnType<typeof api.getActivityLogs> }) {
+function LogTable({ rows }: { rows: ActivityLog[] }) {
   return (
     <Table>
       <TableHeader>
@@ -419,6 +481,13 @@ function LogTable({ rows }: { rows: ReturnType<typeof api.getActivityLogs> }) {
             </TableCell>
           </TableRow>
         ))}
+        {rows.length === 0 && (
+          <TableRow>
+            <TableCell colSpan={4} className="py-6 text-center text-muted-foreground text-sm">
+              No recent activity.
+            </TableCell>
+          </TableRow>
+        )}
       </TableBody>
     </Table>
   );

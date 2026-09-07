@@ -33,6 +33,10 @@ export const Route = createFileRoute("/")({
   component: LoginPage,
 });
 
+const HAS_BACKEND =
+  (import.meta.env.VITE_API_URL as string | undefined) !== undefined &&
+  (import.meta.env.VITE_API_URL as string).length > 0;
+
 function LoginPage() {
   const { session, ready, signIn } = useAuth();
   const navigate = useNavigate();
@@ -46,7 +50,7 @@ function LoginPage() {
     if (ready && session) navigate({ to: "/dashboard" });
   }, [ready, session, navigate]);
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
       setError("Enter both an email address and a password to continue.");
@@ -58,11 +62,15 @@ function LoginPage() {
     }
     setError(null);
     setPending(true);
-    // Mock authentication — any credentials are accepted for the demo.
-    window.setTimeout(() => {
-      signIn(email.trim(), password, role);
+    try {
+      await signIn(email.trim(), password, role);
       navigate({ to: "/dashboard" });
-    }, 450);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Sign-in failed. Please try again.";
+      setError(msg);
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -102,6 +110,7 @@ function LoginPage() {
                 placeholder="analyst@northwind.co"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={pending}
               />
             </div>
 
@@ -114,24 +123,28 @@ function LoginPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={pending}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="role">Sign in as</Label>
-              <Select value={role} onValueChange={(v) => setRole(v as Role)}>
-                <SelectTrigger id="role" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROLES.map((r) => (
-                    <SelectItem key={r} value={r}>
-                      {r}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Role selector only shown in mock mode — backend determines role from DB */}
+            {!HAS_BACKEND && (
+              <div className="space-y-2">
+                <Label htmlFor="role">Sign in as</Label>
+                <Select value={role} onValueChange={(v) => setRole(v as Role)}>
+                  <SelectTrigger id="role" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLES.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {r}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {error ? (
               <div className="flex items-start gap-2 rounded-md border border-destructive/45 bg-destructive/12 px-3 py-2 text-sm text-destructive">
@@ -146,13 +159,22 @@ function LoginPage() {
             </Button>
           </form>
 
-          <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
-            Roles: Security Analyst, SOC Engineer, Security Manager, Administrator
-          </p>
+          {HAS_BACKEND ? (
+            <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
+              Use your registered console credentials to sign in.
+            </p>
+          ) : (
+            <div className="mt-5 space-y-1 rounded-md border border-border bg-muted/40 px-3 py-2">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Demo credentials (mock mode)
+              </p>
+              <p className="font-mono text-xs text-muted-foreground">any email · any password</p>
+            </div>
+          )}
         </div>
 
         <p className="mt-4 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-          Demo mode · mock authentication
+          {HAS_BACKEND ? "Live backend · JWT auth" : "Demo mode · mock authentication"}
         </p>
       </div>
     </div>

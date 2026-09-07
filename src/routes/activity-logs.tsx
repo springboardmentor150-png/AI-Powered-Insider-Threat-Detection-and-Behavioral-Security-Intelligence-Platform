@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { ChevronDown, ChevronRight, FilterX } from "lucide-react";
-import { api, eventTypes, formatTimestamp } from "@/api/mockData";
+import { apiClient } from "@/api/client";
+import { eventTypes, formatTimestamp, type ActivityLog } from "@/api/mockData";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { EventTag } from "@/components/status-badges";
@@ -44,35 +45,35 @@ export const Route = createFileRoute("/activity-logs")({
   component: ActivityLogsPage,
 });
 
-const logs = api.getActivityLogs();
-
 function ActivityLogsPage() {
+  const [allLogs, setAllLogs] = useState<ActivityLog[]>([]);
+  const [loading, setLoading] = useState(true);
   const [employeeId, setEmployeeId] = useState("");
   const [eventType, setEventType] = useState("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const rows = useMemo(
-    () =>
-      logs.filter((l) => {
-        if (employeeId && !l.employee_id.toLowerCase().includes(employeeId.trim().toLowerCase()))
-          return false;
-        if (eventType !== "all" && l.event_type !== eventType) return false;
-        const ts = l.timestamp.slice(0, 10);
-        if (from && ts < from) return false;
-        if (to && ts > to) return false;
-        return true;
-      }),
-    [employeeId, eventType, from, to],
-  );
+  // Fetch with filters — debounced via a single load on filter change
+  useEffect(() => {
+    setLoading(true);
+    apiClient
+      .getActivityLogs({
+        employee_id: employeeId || undefined,
+        event_type: eventType !== "all" ? eventType : undefined,
+        date_from: from || undefined,
+        date_to: to || undefined,
+      })
+      .then(setAllLogs)
+      .finally(() => setLoading(false));
+  }, [employeeId, eventType, from, to]);
 
-  const reset = () => {
+  function reset() {
     setEmployeeId("");
     setEventType("all");
     setFrom("");
     setTo("");
-  };
+  }
 
   return (
     <AppShell>
@@ -126,66 +127,70 @@ function ActivityLogsPage() {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10" />
-                <TableHead>Employee ID</TableHead>
-                <TableHead>Event type</TableHead>
-                <TableHead>Timestamp</TableHead>
-                <TableHead className="hidden md:table-cell">Host</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((l) => {
-                const open = expanded === l.id;
-                return (
-                  <Fragment key={l.id}>
-                    <TableRow
-                      className="cursor-pointer"
-                      onClick={() => setExpanded(open ? null : l.id)}
-                    >
-                      <TableCell className="text-muted-foreground">
-                        {open ? (
-                          <ChevronDown className="size-4" />
-                        ) : (
-                          <ChevronRight className="size-4" />
-                        )}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{l.employee_id}</TableCell>
-                      <TableCell>
-                        <EventTag type={l.event_type} />
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
-                        {formatTimestamp(l.timestamp)}
-                      </TableCell>
-                      <TableCell className="hidden font-mono text-xs text-muted-foreground md:table-cell">
-                        {l.host}
-                      </TableCell>
-                    </TableRow>
-                    {open ? (
-                      <TableRow className="bg-surface hover:bg-surface">
-                        <TableCell />
-                        <TableCell colSpan={4} className="py-4">
-                          <p className="text-sm">{l.details}</p>
-                          <p className="mt-2 font-mono text-xs text-muted-foreground">
-                            {l.id} · host {l.host} · src {l.ip}
-                          </p>
+          {loading ? (
+            <p className="py-10 text-center font-mono text-sm text-muted-foreground">Loading…</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10" />
+                  <TableHead>Employee ID</TableHead>
+                  <TableHead>Event type</TableHead>
+                  <TableHead>Timestamp</TableHead>
+                  <TableHead className="hidden md:table-cell">Host</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {allLogs.map((l) => {
+                  const open = expanded === l.id;
+                  return (
+                    <Fragment key={l.id}>
+                      <TableRow
+                        className="cursor-pointer"
+                        onClick={() => setExpanded(open ? null : l.id)}
+                      >
+                        <TableCell className="text-muted-foreground">
+                          {open ? (
+                            <ChevronDown className="size-4" />
+                          ) : (
+                            <ChevronRight className="size-4" />
+                          )}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{l.employee_id}</TableCell>
+                        <TableCell>
+                          <EventTag type={l.event_type} />
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
+                          {formatTimestamp(l.timestamp)}
+                        </TableCell>
+                        <TableCell className="hidden font-mono text-xs text-muted-foreground md:table-cell">
+                          {l.host}
                         </TableCell>
                       </TableRow>
-                    ) : null}
-                  </Fragment>
-                );
-              })}
-              {rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
-                    No log entries match the current filters.
-                  </TableCell>
-                </TableRow>
-              ) : null}
-            </TableBody>
-          </Table>
+                      {open ? (
+                        <TableRow className="bg-surface hover:bg-surface">
+                          <TableCell />
+                          <TableCell colSpan={4} className="py-4">
+                            <p className="text-sm">{l.details}</p>
+                            <p className="mt-2 font-mono text-xs text-muted-foreground">
+                              {l.id} · host {l.host} · src {l.ip}
+                            </p>
+                          </TableCell>
+                        </TableRow>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
+                {allLogs.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
+                      No log entries match the current filters.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </AppShell>

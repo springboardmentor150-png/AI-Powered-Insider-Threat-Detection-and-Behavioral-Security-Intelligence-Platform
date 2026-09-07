@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { api, formatTimestamp, severities, type Severity, type ThreatAlert } from "@/api/mockData";
+import { useEffect, useMemo, useState } from "react";
+import { apiClient } from "@/api/client";
+import { formatTimestamp, severities, type ActivityLog, type Severity, type ThreatAlert } from "@/api/mockData";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { AlertStatusBadge, SeverityBadge } from "@/components/status-badges";
@@ -44,12 +45,27 @@ export const Route = createFileRoute("/alerts")({
   component: AlertsPage,
 });
 
-const allAlerts = api.getAlerts();
-
 function AlertsPage() {
+  const [allAlerts, setAllAlerts] = useState<ThreatAlert[]>([]);
+  const [loading, setLoading] = useState(true);
   const [severity, setSeverity] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
   const [selected, setSelected] = useState<ThreatAlert | null>(null);
+  const [corrLogs, setCorrLogs] = useState<ActivityLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+
+  useEffect(() => {
+    apiClient.getAlerts().then(setAllAlerts).finally(() => setLoading(false));
+  }, []);
+
+  // Load correlated logs when an alert is selected
+  useEffect(() => {
+    if (!selected) { setCorrLogs([]); return; }
+    setLogsLoading(true);
+    apiClient.getActivityLogsForEmployee(selected.employee_id)
+      .then((logs) => setCorrLogs(logs.slice(0, 4)))
+      .finally(() => setLogsLoading(false));
+  }, [selected]);
 
   const rows = useMemo(
     () =>
@@ -58,7 +74,7 @@ function AlertsPage() {
           (severity === "all" || a.severity === severity) &&
           (status === "all" || a.status === status),
       ),
-    [severity, status],
+    [allAlerts, severity, status],
   );
 
   return (
@@ -99,56 +115,56 @@ function AlertsPage() {
           </Select>
 
           <span className="ml-auto font-mono text-xs text-muted-foreground">
-            {rows.length} / {allAlerts.length} alerts
+            {loading ? "Loading…" : `${rows.length} / ${allAlerts.length} alerts`}
           </span>
         </CardContent>
       </Card>
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Alert</TableHead>
-                <TableHead>Employee</TableHead>
-                <TableHead>Severity</TableHead>
-                <TableHead className="hidden lg:table-cell">Message</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created at</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((a) => (
-                <TableRow
-                  key={a.id}
-                  className="cursor-pointer"
-                  onClick={() => setSelected(a)}
-                >
-                  <TableCell className="font-mono text-xs text-muted-foreground">{a.id}</TableCell>
-                  <TableCell className="whitespace-nowrap font-medium">{a.employee_name}</TableCell>
-                  <TableCell>
-                    <SeverityBadge severity={a.severity} />
-                  </TableCell>
-                  <TableCell className="hidden max-w-[26rem] truncate text-muted-foreground lg:table-cell">
-                    {a.message}
-                  </TableCell>
-                  <TableCell>
-                    <AlertStatusBadge status={a.status} />
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
-                    {formatTimestamp(a.created_at)}
-                  </TableCell>
-                </TableRow>
-              ))}
-              {rows.length === 0 ? (
+          {loading ? (
+            <p className="py-10 text-center font-mono text-sm text-muted-foreground">Loading…</p>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-                    No alerts match the current filters.
-                  </TableCell>
+                  <TableHead>Alert</TableHead>
+                  <TableHead>Employee</TableHead>
+                  <TableHead>Severity</TableHead>
+                  <TableHead className="hidden lg:table-cell">Message</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created at</TableHead>
                 </TableRow>
-              ) : null}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {rows.map((a) => (
+                  <TableRow key={a.id} className="cursor-pointer" onClick={() => setSelected(a)}>
+                    <TableCell className="font-mono text-xs text-muted-foreground">{a.id}</TableCell>
+                    <TableCell className="whitespace-nowrap font-medium">{a.employee_name}</TableCell>
+                    <TableCell>
+                      <SeverityBadge severity={a.severity} />
+                    </TableCell>
+                    <TableCell className="hidden max-w-[26rem] truncate text-muted-foreground lg:table-cell">
+                      {a.message}
+                    </TableCell>
+                    <TableCell>
+                      <AlertStatusBadge status={a.status} />
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
+                      {formatTimestamp(a.created_at)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {rows.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                      No alerts match the current filters.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -187,16 +203,23 @@ function AlertsPage() {
                   <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
                     Correlated activity
                   </p>
-                  <ul className="mt-2 space-y-2">
-                    {api.getActivityLogsForEmployee(selected.employee_id).slice(0, 4).map((l) => (
-                      <li key={l.id} className="rounded-md border border-border bg-surface p-3 text-sm">
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {formatTimestamp(l.timestamp)} · {l.host}
-                        </span>
-                        <span className="mt-1 block">{l.details}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {logsLoading ? (
+                    <p className="mt-2 font-mono text-xs text-muted-foreground">Loading…</p>
+                  ) : (
+                    <ul className="mt-2 space-y-2">
+                      {corrLogs.map((l) => (
+                        <li key={l.id} className="rounded-md border border-border bg-surface p-3 text-sm">
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {formatTimestamp(l.timestamp)} · {l.host}
+                          </span>
+                          <span className="mt-1 block">{l.details}</span>
+                        </li>
+                      ))}
+                      {corrLogs.length === 0 && (
+                        <li className="text-xs text-muted-foreground">No correlated activity found.</li>
+                      )}
+                    </ul>
+                  )}
                 </div>
               </div>
             </>
