@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 480
 
-    # CORS — comma-separated origins
-    cors_origins: str = "http://localhost:3000,http://localhost:5173"
+    # CORS — comma-separated origins (3000 = TanStack Start dev, 5173 = plain Vite)
+    cors_origins: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173"
 
     @property
     def cors_origins_list(self) -> list[str]:

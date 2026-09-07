@@ -7,7 +7,7 @@ GET   /alerts/{alert_id}  — single alert with correlated logs
 PATCH /alerts/{alert_id}  — update status / severity / narrative
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -88,8 +88,8 @@ async def create_alert(
         raise HTTPException(status_code=404, detail=f"Employee '{body.employee_id}' not found.")
 
     # Generate alert_id
-    count_result = await db.execute(select(Alert))
-    count = len(count_result.scalars().all())
+    count_result = await db.execute(select(func.count()).select_from(Alert))
+    count = count_result.scalar_one()
 
     alert = Alert(
         alert_id=f"ALR-{4400 + count + 1}",
