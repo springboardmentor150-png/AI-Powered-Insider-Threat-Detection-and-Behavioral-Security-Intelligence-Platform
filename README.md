@@ -1,176 +1,213 @@
-# AI-Powered Insider Threat Detection & Behavioral Security Intelligence Platform (ITBIS)
+# Insider Threat Behavioral Intelligence System (ITBIS)
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg)](https://fastapi.tiangolo.com/)
-[![Next.js 14](https://img.shields.io/badge/Next.js-14-black.svg)](https://nextjs.org/)
-[![Scikit-Learn](https://img.shields.io/badge/ML-Isolation%20Forest-F7931E.svg)](https://scikit-learn.org/)
-[![Cybersecurity](https://img.shields.io/badge/SOC-MITRE%20ATT%26CK-red.svg)](https://attack.mitre.org/)
-
-An enterprise-grade, full-stack cybersecurity intelligence platform designed to identify, analyze, and mitigate insider risks. Unlike perimeter defenses targeting external attackers, **ITBIS** evaluates behavioral telemetry from users with legitimate credentials (employees, contractors, privileged administrators) to detect credential theft, privilege abuse, abnormal data exfiltration, and intellectual property leaks.
+**Insider Threat Behavioral Intelligence System (ITBIS)** is an enterprise-grade cybersecurity platform engineered to monitor, analyze, and investigate risky insider behavior performed by employees with authorized system access.
 
 ---
 
-## 🏛 System Architecture
-
-The platform is structured into four cohesive layers:
+## 🏛️ System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           1. CLIENTS & ROLES LAYER                          │
-│   Security Analyst  │  SOC Engineer  │  Security Manager  │  Administrator  │
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                      2. API GATEWAY & SECURITY (FastAPI)                    │
-│   - JWT Bearer Authentication (8-Hour Expiry)                              │
-│   - Strict Role-Based Access Control (RBAC Dependencies)                   │
-│   - CORS Middleware & Rate Limiting                                         │
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         3. CORE MICROSERVICES & AI                          │
-│  ┌───────────────────────┐ ┌──────────────────────┐ ┌────────────────────┐  │
-│  │ Identity & Profiles   │ │ Activity Ingestion   │ │ Isolation Forest   │  │
-│  │ Employee CRUD         │ │ Unstructured Stream  │ │ Anomaly Detector   │  │
-│  └───────────────────────┘ └──────────────────────┘ └────────────────────┘  │
-│  ┌───────────────────────┐ ┌──────────────────────┐ ┌────────────────────┐  │
-│  │ Composite Risk Scorer │ │ Alert Triage Engine  │ │ SOC Incident Room  │  │
-│  │ 0-100 Dynamic Index   │ │ Micro-Trigger Rules  │ │ MITRE ATT&CK Maps  │  │
-│  └───────────────────────┘ └──────────────────────┘ └────────────────────┘  │
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           4. DATA PERSISTENCE LAYER                         │
-│   Structured Relational Data:          Flexible Unstructured Telemetry:    │
-│   PostgreSQL / SQLite                  MongoDB / Embedded Document Store   │
-│   (Users, Employees, Alerts, Incidents)(Activity Logs, Behavioral Baselines)│
-└─────────────────────────────────────────────────────────────────────────────┘
+                                 +-------------------------+
+                                 |  Next.js Frontend Client |
+                                 |   (http://localhost:3000)|
+                                 +------------+------------+
+                                              |
+                                              v  REST APIs / JWT Bearer
+                                 +------------+------------+
+                                 |  FastAPI Backend Server |
+                                 |   (http://localhost:8000)|
+                                 +-----+-------------+-----+
+                                       |             |
+                        +--------------+             +--------------+
+                        v                                           v
+         +--------------+--------------+             +--------------+--------------+
+         |     PostgreSQL Relational   |             |      MongoDB Document Store |
+         | (Users, Employees, Alerts,  |             | (Activity Logs, Behavioral  |
+         |           Incidents)        |             |          Baselines)         |
+         +-----------------------------+             +-----------------------------+
 ```
 
----
-
-## ⚡ Key Capabilities
-
-1. **Unsupervised ML Anomaly Detection (Isolation Forest)**:
-   - Evaluates multi-dimensional feature vectors including egress file volume, off-hours execution ratio, removable USB operations, database record count, and privilege escalation attempts.
-   - Computes statistical deviations against learned per-identity baselines.
-
-2. **Multi-Factor Behavioral Risk Scorer (0 - 100 Index)**:
-   - Aggregates anomaly model confidence with real-time heuristic triggers into continuous threat tiers:
-     - `LOW` (0–34) &bull; `MEDIUM` (35–59) &bull; `HIGH` (60–79) &bull; `CRITICAL` (80–100).
-
-3. **MITRE ATT&CK Insider Threat Correlation**:
-   - Automatically maps suspicious telemetry patterns to MITRE techniques:
-     - **T1052.001**: Exfiltration Over Physical Medium (USB)
-     - **T1567**: Exfiltration Over Web Service / Cloud Drive
-     - **T1078.004**: Valid Accounts / Off-Hours Credential Use
-     - **T1005 / T1530**: Mass Database & Local System Scraping
-     - **T1548 / T1098**: Abuse of Elevation Control Mechanisms
-
-4. **Interactive Threat Simulation Lab**:
-   - Built-in one-click threat injector with 4 realistic scenarios (Mass Data Exfiltration, Compromised Admin via Tor, Database Scraping, and Nominal Benign Workday).
-
-5. **Full-Stack Role-Based Access Control (RBAC)**:
-   - Enforces specific permissions across `admin`, `security_manager`, `security_analyst`, and `soc_engineer`.
+### Why Dual Databases?
+* **PostgreSQL**: Used for structured relational data requiring strict schema integrity (User accounts, employee identities, security alerts, and incident dockets).
+* **MongoDB**: Used for high-speed flexible JSON document telemetry ingestion (Device logins, off-hours file downloads, USB insertions, VPN logins, and privilege escalations).
 
 ---
 
-## 🚀 Quick Start Guide
+## ⚡ Technology Stack
+
+### Backend
+* **Language**: Python 3.10+
+* **Framework**: FastAPI (Uvicorn ASGI Web Server)
+* **Relational DB**: PostgreSQL / SQLite fallback (SQLAlchemy ORM)
+* **Document DB**: MongoDB (PyMongo Client with Fallback Engine)
+* **Authentication**: JWT Tokens (8-Hour Expiration)
+* **Password Hashing**: Passlib + Bcrypt
+* **Validation**: Pydantic v2
+* **CORS**: Configured for `http://localhost:3000`
+
+### Frontend
+* **Framework**: Next.js 14 (App Router)
+* **Library**: React 18 + TypeScript
+* **Styling**: Vanilla Tailwind CSS (Custom Dark SOC Theme)
+* **HTTP Client**: Axios (Centralized Bearer Token Interceptor)
+* **Icons**: Lucide React
+
+---
+
+## 🔑 Role-Based Access Control (RBAC) Matrix
+
+| Feature / Page | Security Analyst | SOC Engineer | Security Manager | Admin |
+| :--- | :---: | :---: | :---: | :---: |
+| **View Dashboard** | ✅ | ✅ | ✅ | ✅ |
+| **View Employee Profiles** | ✅ | ✅ | ✅ | ✅ |
+| **Create / Edit Employees** | ❌ | ❌ | ✅ | ✅ |
+| **Delete Employee** | ❌ | ❌ | ❌ | ✅ |
+| **View Activity Logs** | ✅ | ✅ | ✅ | ✅ |
+| **Test Log Ingestion** | ✅ | ✅ | ✅ | ✅ |
+| **View & Update Alerts** | ✅ | ✅ | ✅ | ✅ |
+| **View & Update Incidents** | ✅ | ✅ | ✅ | ✅ |
+| **Admin User Management** | ❌ | ❌ | ❌ | ✅ |
+| **System Settings** | ❌ | ❌ | ❌ | ✅ |
+
+*Note: Unauthorized role access attempts trigger backend HTTP 403 Forbidden responses and render a high-tech UI Access Denied screen.*
+
+---
+
+## 🚀 Easy Windows Setup & Quickstart
 
 ### Prerequisites
-- Python 3.10+
-- Node.js 18+ and npm
+* Python 3.10 or higher
+* Node.js v18 or higher
+* PostgreSQL & MongoDB (Optional: The application includes automatic fallback engines if database servers are not active during local testing).
 
-### 1. One-Click Startup (Windows)
-Double-click the pre-configured scripts inside `scripts/`:
-1. `scripts\start_backend.bat` &rarr; Starts FastAPI server at `http://127.0.0.1:8000`
-2. `scripts\start_frontend.bat` &rarr; Starts Next.js frontend at `http://127.0.0.1:3000`
+---
 
-### 2. Manual Startup
+### Step 1: Clone & Configure Environment Variables
 
-#### Backend:
 ```bash
-cd backend
-python -m pip install -r requirements.txt
-python run.py
+# Clone or navigate to ITBIS workspace
+cd ITBIS
+
+# Copy environment variable templates
+cp .env.example .env
+cp frontend/.env.local.example frontend/.env.local
 ```
-- API Documentation (Swagger UI): [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- Health Check: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
 
-#### Frontend:
-```bash
-cd frontend
+---
+
+### Step 2: Backend Setup & Seeding
+
+Open PowerShell or Command Prompt:
+
+```powershell
+cd backend
+
+# 1. Create Virtual Environment
+python -m venv venv
+
+# 2. Activate Virtual Environment
+venv\Scripts\activate
+
+# 3. Install Python Dependencies
+pip install -r requirements.txt
+
+# 4. Seed Database (Creates Users, Employees, Activity Logs, Alerts, Incidents)
+python seed.py
+
+# 5. Start FastAPI Backend Server
+uvicorn app.main:app --reload --port 8000
+```
+
+Backend API Swagger documentation will be available at:
+👉 **`http://localhost:8000/docs`**
+
+---
+
+### Step 3: Frontend Setup
+
+Open a **second** PowerShell window:
+
+```powershell
+cd ITBIS\frontend
+
+# 1. Install Node Packages
 npm install
+
+# 2. Start Development Server
 npm run dev
 ```
-- Web Application: [http://localhost:3000](http://localhost:3000)
+
+Frontend application will open at:
+👉 **`http://localhost:3000`**
 
 ---
 
-## 🔑 Default Demo Accounts
+## 🔒 Pre-Populated Demo Account Credentials
 
-All demo accounts share the password: `Security@123`
+| Role | Username | Email | Password |
+| :--- | :--- | :--- | :--- |
+| **Administrator** | `admin` | `admin@itbis.sec` | `AdminPassword123!` |
+| **Security Manager** | `manager_sec` | `manager@itbis.sec` | `ManagerPassword123!` |
+| **SOC Engineer** | `soc_eng` | `soc@itbis.sec` | `SocPassword123!` |
+| **Security Analyst** | `analyst_l1` | `analyst@itbis.sec` | `AnalystPassword123!` |
 
-| Role | Email | Permissions & Purpose |
-|---|---|---|
-| **Administrator** | `admin@itbis.security` | Full system access, user provisioning, employee deletion |
-| **Lead Analyst** | `analyst@itbis.security` | Alert triage, incident escalation, AI forensic reports |
-| **SOC Director** | `manager@itbis.security` | Employee onboarding, baseline reviews, compliance |
-| **SOC Engineer** | `soc@itbis.security` | Telemetry streaming, threat vector simulations |
-
-*(Tip: You can switch roles instantly in the frontend using the 1-Click "Switch Role" dropdown in the navbar!)*
+*(Pro-tip: Use the 1-Click Quick Demo Login shortcuts on the Login page at `http://localhost:3000/login` to log in instantly as any role!)*
 
 ---
 
-## 🧪 Running Automated Tests
+## 📑 API Endpoints Summary
 
-Run the backend test suite:
-```bash
-cd backend
-python -m pytest tests/test_api.py -v
-```
+### Authentication
+* `POST /auth/signup` — Register new security user
+* `POST /auth/login` — Authenticate and obtain JWT token
+* `GET /auth/me` — Get logged-in user profile
 
-Run the end-to-end integration test:
-```bash
-python scripts/test_system.py
-```
+### Employee Management
+* `GET /employees` — List all monitored employees
+* `POST /employees` — Add employee (*Security Manager / Admin*)
+* `GET /employees/{employee_id}` — Get detailed profile & telemetry timeline
+* `PUT /employees/{employee_id}` — Update employee details
+* `DELETE /employees/{employee_id}` — Delete employee (*Admin Only*)
+
+### Activity Log Ingestion (MongoDB)
+* `POST /logs/ingest` — Ingest activity log document
+* `GET /logs` — Filter and fetch activity log feed
+* `GET /logs/{employee_id}` — Get logs for specific employee
+
+### Security Alerts & Incidents
+* `GET /alerts` — List security alerts
+* `PUT /alerts/{alert_id}` — Update alert status
+* `GET /incidents` — List active incident dockets
+* `POST /incidents` — Create incident case
+* `GET /incidents/{incident_id}` — Detailed incident docket inspection
+* `PUT /incidents/{incident_id}` — Update incident status workflow
+
+### Administration & Health
+* `GET /admin/users` — List system users (*Admin Only*)
+* `PUT /admin/users/{user_id}` — Change user role/status (*Admin Only*)
+* `GET /dashboard/stats` — Real-time SOC dashboard metrics
+* `GET /health` — Multi-database health status check
 
 ---
 
-## 📁 Repository Structure
+## 🎯 Milestone Roadmap
 
-```
-itbis/
-├── backend/
-│   ├── app/
-│   │   ├── config.py              # App configurations
-│   │   ├── database.py            # Relational & Document DB connectors
-│   │   ├── models.py              # SQLAlchemy DB models
-│   │   ├── schemas.py             # Pydantic validation schemas
-│   │   ├── auth.py                # Direct bcrypt & JWT auth logic
-│   │   ├── seed_data.py           # Demo identities & baseline telemetry
-│   │   ├── ml_engine/
-│   │   │   ├── anomaly_detector.py # Isolation Forest behavioral engine
-│   │   │   ├── risk_scorer.py      # Composite 0-100 risk scorer
-│   │   │   └── threat_explainer.py # MITRE correlation & AI playbooks
-│   │   └── routes/                # API router modules
-│   ├── tests/
-│   │   └── test_api.py            # Pytest test suite
-│   ├── requirements.txt
-│   └── run.py
-├── frontend/
-│   ├── src/
-│   │   ├── app/                   # Next.js App Router pages
-│   │   ├── components/            # UI components & Modals
-│   │   └── lib/                   # API client & Auth context
-│   └── package.json
-├── scripts/
-│   ├── start_backend.bat
-│   ├── start_frontend.bat
-│   └── test_system.py
-├── README.md
-└── STUDENT_GUIDE.md
-```
+### Completed in Milestone 1 (Day 1 - 10)
+- [x] Complete Full-Stack Architecture
+- [x] Dual PostgreSQL & MongoDB Database Integrations
+- [x] Fast-API REST APIs with Swagger OpenAPI Documentation
+- [x] JWT Authentication & Passlib/Bcrypt Hashing
+- [x] 4-Tier Role-Based Access Control (RBAC) on Backend APIs & Frontend UI
+- [x] Employee Registry & Profile Telemetry Timelines
+- [x] MongoDB Activity Log Ingestion (`POST /logs/ingest`)
+- [x] Interactive "Test Log Ingestion" Form
+- [x] Live Cybersecurity Dashboard with real-time stats and SVG charts
+- [x] Alert & Incident Management Workflows
+- [x] Admin User Management & System Diagnostics
+- [x] Automatic Database Seeding & Easy Local Windows Execution
+
+### Reserved for Milestone 2 (Future Machine Learning & XAI Integration)
+- [ ] Isolation Forest & Autoencoder Anomaly Detection Pipeline
+- [ ] Real-Time Dynamic Risk Score Computation (0-100)
+- [ ] SHAP / LIME Explainable AI (XAI) Feature Importance Attribution
+- [ ] Automated Behavioral Baseline Model Retraining
