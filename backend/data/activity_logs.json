@@ -7,6 +7,204 @@
       "attachment": "archive_backup.enc",
       "size_mb": 590.0
     },
+    "timestamp": "2026-10-05T02:40:19.862981",
+    "_id": "7a56562e-dfb3-45a5-8b6c-58d244f5c5ab"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "file_download",
+    "details": {
+      "file_name": "customer_pci_tokens_q4.csv",
+      "size_mb": 180.0,
+      "is_confidential": true
+    },
+    "timestamp": "2026-10-05T02:33:19.862981",
+    "_id": "33f7a371-18b1-4dd6-8886-882837d5627b"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "usb_connect",
+    "details": {
+      "vendor_id": "SanDisk_Ultra_128G",
+      "serial": "SD-99410-X",
+      "action": "MOUNTED_READ_WRITE"
+    },
+    "timestamp": "2026-10-05T02:25:19.862981",
+    "_id": "d33569b5-646c-460d-a243-79d8db7f3fa7"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "file_download",
+    "details": {
+      "file_name": "src_core_proprietary_algorithms.zip",
+      "size_mb": 420.5,
+      "is_confidential": true
+    },
+    "timestamp": "2026-10-05T02:20:19.862981",
+    "_id": "55da79ab-1dc9-484a-bab3-e9cbad28f99b"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "login",
+    "details": {
+      "ip_address": "192.168.1.185",
+      "device": "workstation-mac-01",
+      "is_off_hours": true,
+      "auth_method": "VPN"
+    },
+    "timestamp": "2026-10-05T02:15:19.862981",
+    "_id": "9ddffbfb-e9c4-4779-8279-fcb020091f6e"
+  },
+  {
+    "employee_id": "EMP9999",
+    "event_type": "usb_connect",
+    "details": {
+      "device": "Kingston_64G",
+      "action": "WRITE_OPERATION"
+    },
+    "timestamp": "2026-10-05T14:39:18.889055",
+    "_id": "18359712-d30f-4d39-9397-cdba56f2ac5e"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "email_sent",
+    "details": {
+      "recipient": "personal.dropbox.backup@gmail.com",
+      "attachment": "archive_backup.enc",
+      "size_mb": 590.0
+    },
+    "timestamp": "2026-10-05T02:40:25.854865",
+    "_id": "f33e16fe-d8b5-4b48-9b53-81a64792f851"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "file_download",
+    "details": {
+      "file_name": "customer_pci_tokens_q4.csv",
+      "size_mb": 180.0,
+      "is_confidential": true
+    },
+    "timestamp": "2026-10-05T02:33:25.854865",
+    "_id": "efb4827c-9b8e-4a3e-b780-f19caaee7ab2"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "usb_connect",
+    "details": {
+      "vendor_id": "SanDisk_Ultra_128G",
+      "serial": "SD-99410-X",
+      "action": "MOUNTED_READ_WRITE"
+    },
+    "timestamp": "2026-10-05T02:25:25.854865",
+    "_id": "9277bc09-bc74-428e-a5fe-f37f7feb3a73"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "file_download",
+    "details": {
+      "file_name": "src_core_proprietary_algorithms.zip",
+      "size_mb": 420.5,
+      "is_confidential": true
+    },
+    "timestamp": "2026-10-05T02:20:25.854865",
+    "_id": "cd63fcef-3c7a-4931-8fc3-75f1362ebce4"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "login",
+    "details": {
+      "ip_address": "192.168.1.185",
+      "device": "workstation-mac-01",
+      "is_off_hours": true,
+      "auth_method": "VPN"
+    },
+    "timestamp": "2026-10-05T02:15:25.854865",
+    "_id": "e5e43453-90c4-41b8-8f27-375446df943d"
+  },
+  {
+    "employee_id": "EMP9999",
+    "event_type": "usb_connect",
+    "details": {
+      "device": "Kingston_64G",
+      "action": "WRITE_OPERATION"
+    },
+    "timestamp": "2026-10-05T14:36:24.882240",
+    "_id": "3db565bc-58a0-4a99-9584-1265f0f5cafb"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "email_sent",
+    "details": {
+      "recipient": "personal.dropbox.backup@gmail.com",
+      "attachment": "archive_backup.enc",
+      "size_mb": 590.0
+    },
+    "timestamp": "2026-10-05T02:40:29.337600",
+    "_id": "e354dbfd-c540-4236-b076-be8bb3fcd011"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "file_download",
+    "details": {
+      "file_name": "customer_pci_tokens_q4.csv",
+      "size_mb": 180.0,
+      "is_confidential": true
+    },
+    "timestamp": "2026-10-05T02:33:29.337600",
+    "_id": "ba49b9b4-d731-4518-9573-c366a408e2b6"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "usb_connect",
+    "details": {
+      "vendor_id": "SanDisk_Ultra_128G",
+      "serial": "SD-99410-X",
+      "action": "MOUNTED_READ_WRITE"
+    },
+    "timestamp": "2026-10-05T02:25:29.337600",
+    "_id": "2a80264d-dc34-47ce-8fc9-24fce16e305c"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "file_download",
+    "details": {
+      "file_name": "src_core_proprietary_algorithms.zip",
+      "size_mb": 420.5,
+      "is_confidential": true
+    },
+    "timestamp": "2026-10-05T02:20:29.337600",
+    "_id": "abedfb23-1a73-4cca-9768-d2161fea9d35"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "login",
+    "details": {
+      "ip_address": "192.168.1.185",
+      "device": "workstation-mac-01",
+      "is_off_hours": true,
+      "auth_method": "VPN"
+    },
+    "timestamp": "2026-10-05T02:15:29.337600",
+    "_id": "014e398b-f5b2-4b81-9b3a-617e66685b93"
+  },
+  {
+    "employee_id": "EMP9999",
+    "event_type": "usb_connect",
+    "details": {
+      "device": "Kingston_64G",
+      "action": "WRITE_OPERATION"
+    },
+    "timestamp": "2026-10-05T14:34:28.271445",
+    "_id": "8faf3f38-424e-4215-88ce-56755c1904c4"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "email_sent",
+    "details": {
+      "recipient": "personal.dropbox.backup@gmail.com",
+      "attachment": "archive_backup.enc",
+      "size_mb": 590.0
+    },
     "timestamp": "2026-09-21T02:40:32.771369",
     "_id": "253e2e8a-da66-4275-ad5c-c3f9b4e3136b"
   },

@@ -27,10 +27,10 @@ def get_db():
         db.close()
 
 # -------------------------------------------------------------
-# 2. Document Store (MongoDB with Automatic Fallback)
+# 2. Document Store (MongoDB with Automatic Fallback & Aggregate Support)
 # -------------------------------------------------------------
 class InMemoryCollection:
-    """Thread-safe document collection with MongoDB-compatible syntax."""
+    """Thread-safe document collection with MongoDB-compatible syntax and aggregation pipeline support."""
     def __init__(self, name: str, backing_file: Optional[str] = None):
         self.name = name
         self.backing_file = backing_file
@@ -106,7 +106,6 @@ class InMemoryCollection:
                 matches = True
                 for k, v in query.items():
                     if k == "$gte" or isinstance(v, dict):
-                        # Filter operator check, e.g. {"detected_at": {"$gte": cutoff}}
                         if isinstance(v, dict) and "$gte" in v:
                             doc_val = doc.get(k)
                             if doc_val is None or doc_val < v["$gte"]:
@@ -120,16 +119,6 @@ class InMemoryCollection:
                 if len(results) >= limit:
                     break
             return results
-
-    def sort(self, field: str, direction: int = -1):
-        class SortedQuery:
-            def __init__(self, docs, field, direction):
-                self._docs = sorted(docs, key=lambda x: x.get(field, datetime.min), reverse=(direction == -1))
-            def limit(self, count: int):
-                return self._docs[:count]
-            def __iter__(self):
-                return iter(self._docs)
-        return SortedQuery(self.docs, field, direction)
 
     def find_one(self, query: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         results = self.find(query=query, limit=1)
@@ -149,6 +138,86 @@ class InMemoryCollection:
             self.docs = [d for d in self.docs if not all(d.get(k) == v for k, v in query.items())]
             self._persist_to_file()
             return type("DeleteResult", (), {"deleted_count": initial_count - len(self.docs)})()
+
+    def aggregate(self, pipeline: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Executes MongoDB aggregation pipeline ($match, $group, $sort, $limit).
+        """
+        with self.lock:
+            results = [dict(d) for d in self.docs]
+
+            for stage in pipeline:
+                if "$match" in stage:
+                    match_query = stage["$match"]
+                    filtered = []
+                    for doc in results:
+                        matched = True
+                        for k, v in match_query.items():
+                            if isinstance(v, dict) and "$gte" in v:
+                                doc_val = doc.get(k)
+                                if doc_val is None or doc_val < v["$gte"]:
+                                    matched = False
+                                    break
+                            elif doc.get(k) != v:
+                                matched = False
+                                break
+                        if matched:
+                            filtered.append(doc)
+                    results = filtered
+
+                elif "$group" in stage:
+                    group_def = stage["$group"]
+                    id_expr = group_def.get("_id")
+                    grouped = {}
+
+                    for doc in results:
+                        # Extract group key
+                        if isinstance(id_expr, str) and id_expr.startswith("$"):
+                            key = doc.get(id_expr[1:])
+                        elif isinstance(id_expr, dict) and "$dateToString" in id_expr:
+                            date_field = id_expr["$dateToString"]["date"].replace("$", "")
+                            dt = doc.get(date_field)
+                            if isinstance(dt, datetime):
+                                key = dt.strftime("%Y-%m-%d")
+                            elif isinstance(dt, str):
+                                key = dt[:10]
+                            else:
+                                key = str(datetime.utcnow().date())
+                        else:
+                            key = str(doc.get(id_expr, "unknown"))
+
+                        if key not in grouped:
+                            grouped[key] = {"_id": key, "items": []}
+                        grouped[key]["items"].append(doc)
+
+                    # Compute accumulators
+                    agg_results = []
+                    for k, grp in grouped.items():
+                        out = {"_id": k}
+                        for field, acc in group_def.items():
+                            if field == "_id":
+                                continue
+                            if isinstance(acc, dict) and "$sum" in acc:
+                                sum_val = acc["$sum"]
+                                if sum_val == 1:
+                                    out[field] = len(grp["items"])
+                                    out["count"] = len(grp["items"])
+                                    out["flag_count"] = len(grp["items"])
+                                else:
+                                    out[field] = sum(doc.get(sum_val.replace("$", ""), 0) for doc in grp["items"])
+                        agg_results.append(out)
+                    results = agg_results
+
+                elif "$sort" in stage:
+                    sort_def = stage["$sort"]
+                    for field, direction in sort_def.items():
+                        results.sort(key=lambda x: x.get(field, 0), reverse=(direction == -1))
+
+                elif "$limit" in stage:
+                    limit_val = stage["$limit"]
+                    results = results[:limit_val]
+
+            return results
 
 
 class DocumentDatabase:
@@ -204,4 +273,4 @@ class DocumentDatabase:
         return self["behavioral_baselines"]
 
 doc_db = DocumentDatabase()
-mongo_db = doc_db  # Alias matching Milestone 3 specification
+mongo_db = doc_db

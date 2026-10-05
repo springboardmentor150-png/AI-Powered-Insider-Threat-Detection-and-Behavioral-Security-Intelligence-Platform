@@ -1,0 +1,17 @@
+[build]
+  base = "frontend"
+  publish = ".next"
+  command = "npm run build"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NEXT_PUBLIC_API_URL = "/api/v1"
+
+# API Reverse Proxy (points to live backend or localhost during dev)
+[[redirects]]
+  from = "/api/v1/*"
+  to = "http://127.0.0.1:8000/:splat"
+  status = 200

@@ -3,56 +3,56 @@
     "employee_id": "EMP1001",
     "is_anomaly": false,
     "anomaly_score": 0.12,
-    "detected_at": "2026-09-09T17:41:54.348566",
-    "_id": "83c5b8d0-b481-4b0a-990d-2d60e614cb16"
+    "detected_at": "2026-09-23T14:49:32.131759",
+    "_id": "652511c4-fc28-4c29-9be5-43281f924ed8"
   },
   {
     "employee_id": "EMP1006",
     "is_anomaly": false,
     "anomaly_score": 0.32,
-    "detected_at": "2026-09-15T17:41:54.348566",
-    "_id": "db7bd774-90e2-474f-811d-b1042d535ab1"
+    "detected_at": "2026-09-29T14:49:32.131759",
+    "_id": "902f95f6-4055-4074-83f2-a12f086cb94d"
   },
   {
     "employee_id": "EMP1002",
     "is_anomaly": true,
     "anomaly_score": 0.71,
-    "detected_at": "2026-09-19T17:41:54.348566",
-    "_id": "eed287b6-6d2e-4bb2-b754-c7856fe9b666"
+    "detected_at": "2026-10-03T14:49:32.131759",
+    "_id": "9c6b9547-f8ec-4306-89cf-b62d2625b741"
   },
   {
     "employee_id": "EMP1002",
     "is_anomaly": true,
     "anomaly_score": 0.76,
-    "detected_at": "2026-09-20T17:41:54.348566",
-    "_id": "00fce2ea-c20e-4940-94fd-62aaf8fdcbf4"
+    "detected_at": "2026-10-04T14:49:32.131759",
+    "_id": "7bf99f0f-be59-4091-8ba1-b58d1d5348a8"
   },
   {
     "employee_id": "EMP1003",
     "is_anomaly": true,
     "anomaly_score": 0.85,
-    "detected_at": "2026-09-17T17:41:54.348566",
-    "_id": "09ae5ff8-5793-4cca-a9dd-1b095e6e358c"
+    "detected_at": "2026-10-01T14:49:32.131759",
+    "_id": "5c172331-8d42-4567-8b41-a864dd2b981e"
   },
   {
     "employee_id": "EMP1003",
     "is_anomaly": true,
     "anomaly_score": 0.88,
-    "detected_at": "2026-09-18T17:41:54.348566",
-    "_id": "58b445af-4b43-4a38-8a3f-eb0b38c54919"
+    "detected_at": "2026-10-02T14:49:32.131759",
+    "_id": "799be28a-9438-4400-8b92-5b920c46571f"
   },
   {
     "employee_id": "EMP1003",
     "is_anomaly": true,
     "anomaly_score": 0.91,
-    "detected_at": "2026-09-19T14:41:54.348566",
-    "_id": "e59887b2-020e-45f1-ad2d-8b5d51b62054"
+    "detected_at": "2026-10-03T11:49:32.131759",
+    "_id": "f10bb5ff-6f71-418c-9f65-9299e299e9e0"
   },
   {
     "employee_id": "EMP1003",
     "is_anomaly": true,
     "anomaly_score": 0.94,
-    "detected_at": "2026-09-19T17:41:54.348566",
-    "_id": "61682379-1cf7-4a95-86e1-6327303f5159"
+    "detected_at": "2026-10-03T14:49:32.131759",
+    "_id": "cb8aaa7e-4ed1-4f5b-97bf-19465837b6a7"
   }
 ]

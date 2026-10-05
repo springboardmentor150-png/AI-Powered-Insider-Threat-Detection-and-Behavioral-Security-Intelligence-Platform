@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { employeeAPI, alertAPI, incidentAPI, logAPI, aiAPI, dashboardAPI } from "@/lib/api";
 import { ThreatScoreBadge } from "@/components/ThreatScoreBadge";
+import { DashboardCharts } from "@/components/DashboardCharts";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -205,6 +206,9 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Milestone 3 Chart.js Visualizations (Analyst, SOC, Manager) */}
+      <DashboardCharts socData={socData} analystData={analystData} managerData={managerData} />
 
       {/* Main Grid: Threat Watchlist & Live Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

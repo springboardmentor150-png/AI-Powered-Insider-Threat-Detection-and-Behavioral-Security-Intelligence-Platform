@@ -3,112 +3,112 @@
     "employee_id": "EMP1001",
     "anomaly_type": "minor_timing",
     "severity": "low",
-    "detected_at": "2026-09-09T17:41:54.348566",
-    "_id": "56855796-f640-4533-991c-61b22396fa80"
+    "detected_at": "2026-09-23T14:49:32.131759",
+    "_id": "8491f25b-0df4-4621-a1c4-cd076fda6f1a"
   },
   {
     "employee_id": "EMP1006",
     "anomaly_type": "unusual_query",
     "severity": "medium",
-    "detected_at": "2026-09-15T15:41:54.348566",
-    "_id": "4010bfc4-4659-4c1a-9dc5-f728a4e624a2"
+    "detected_at": "2026-09-29T12:49:32.131759",
+    "_id": "34ebb469-86fc-4bbd-ad65-e575218acc94"
   },
   {
     "employee_id": "EMP1006",
     "anomaly_type": "unusual_volume",
     "severity": "medium",
-    "detected_at": "2026-09-15T17:41:54.348566",
-    "_id": "fc382a05-2c63-41df-8c04-972fa1fe7f07"
+    "detected_at": "2026-09-29T14:49:32.131759",
+    "_id": "9be53e0a-d4fa-41b3-aa5a-a0d6a97aeb23"
   },
   {
     "employee_id": "EMP1002",
     "anomaly_type": "unusual_device",
     "severity": "medium",
-    "detected_at": "2026-09-17T13:41:54.348566",
-    "_id": "30e3c188-b68d-4b8f-ae84-ffcf0843319d"
+    "detected_at": "2026-10-01T10:49:32.131759",
+    "_id": "86b5b02e-47bb-4369-a42b-dd7cbb7158c3"
   },
   {
     "employee_id": "EMP1002",
     "anomaly_type": "unusual_time",
     "severity": "medium",
-    "detected_at": "2026-09-17T15:41:54.348566",
-    "_id": "725595a6-2696-4239-8207-8dd53183181d"
+    "detected_at": "2026-10-01T12:49:32.131759",
+    "_id": "703b228f-849d-4609-a87f-9cabde50c19a"
   },
   {
     "employee_id": "EMP1002",
     "anomaly_type": "unusual_access",
     "severity": "medium",
-    "detected_at": "2026-09-17T17:41:54.348566",
-    "_id": "d880710e-a36c-4992-84f0-49349f4fbbb6"
+    "detected_at": "2026-10-01T14:49:32.131759",
+    "_id": "e7b96f75-99b3-44e1-9f1a-926474a4ac56"
   },
   {
     "employee_id": "EMP1002",
     "anomaly_type": "data_exfiltration",
     "severity": "high",
-    "detected_at": "2026-09-20T15:41:54.348566",
-    "_id": "98804f2f-be91-4121-a679-41e0f7917243"
+    "detected_at": "2026-10-04T12:49:32.131759",
+    "_id": "047cf824-aa55-4ace-9707-1b1da44edfdf"
   },
   {
     "employee_id": "EMP1002",
     "anomaly_type": "privilege_change",
     "severity": "medium",
-    "detected_at": "2026-09-20T17:41:54.348566",
-    "_id": "c3715efe-776d-4cae-bcbb-9187d4f497c9"
+    "detected_at": "2026-10-04T14:49:32.131759",
+    "_id": "b1ea2cae-3e58-4656-96f0-522d15e4641a"
   },
   {
     "employee_id": "EMP1003",
     "anomaly_type": "mass_download",
     "severity": "high",
-    "detected_at": "2026-09-16T17:41:54.348566",
-    "_id": "23ccaa18-0d64-45da-924e-dab88a3e862f"
+    "detected_at": "2026-09-30T14:49:32.131759",
+    "_id": "10491ba6-aeec-48e4-bc66-cdcc66c7cfdb"
   },
   {
     "employee_id": "EMP1003",
     "anomaly_type": "unusual_ip",
     "severity": "high",
-    "detected_at": "2026-09-18T14:41:54.348566",
-    "_id": "c8ad8fdf-123e-4e0e-a02c-41cb78db345b"
+    "detected_at": "2026-10-02T11:49:32.131759",
+    "_id": "36b5a29c-272f-480b-9480-851738d921c6"
   },
   {
     "employee_id": "EMP1003",
     "anomaly_type": "unusual_hours",
     "severity": "high",
-    "detected_at": "2026-09-18T17:41:54.348566",
-    "_id": "a9fc95f5-f4e0-48fd-95f3-678b796ef88c"
+    "detected_at": "2026-10-02T14:49:32.131759",
+    "_id": "5654ebc3-df89-4762-8eef-ea97a42d13ab"
   },
   {
     "employee_id": "EMP1003",
     "anomaly_type": "data_exfiltration",
     "severity": "critical",
-    "detected_at": "2026-09-19T12:41:54.348566",
-    "_id": "cc7462b4-669f-4c5c-8d90-e935ad775afa"
+    "detected_at": "2026-10-03T09:49:32.131759",
+    "_id": "ad44f6eb-18ee-47ef-aaec-1dac6061bca6"
   },
   {
     "employee_id": "EMP1003",
     "anomaly_type": "data_exfiltration",
     "severity": "critical",
-    "detected_at": "2026-09-19T13:41:54.348566",
-    "_id": "c789d452-0bd7-42c6-9d53-b920c6d0712a"
+    "detected_at": "2026-10-03T10:49:32.131759",
+    "_id": "5d11c01f-8dbf-4435-86a6-f8c88c280eb1"
   },
   {
     "employee_id": "EMP1003",
     "anomaly_type": "privilege_change",
     "severity": "critical",
-    "detected_at": "2026-09-19T15:41:54.348566",
-    "_id": "5498cffd-4b06-42b9-9de6-774653ad9040"
+    "detected_at": "2026-10-03T12:49:32.131759",
+    "_id": "ce4fcb63-90c6-41f5-9fb7-e644a5f746ba"
   },
   {
     "employee_id": "EMP1003",
     "anomaly_type": "privilege_change",
     "severity": "critical",
-    "detected_at": "2026-09-19T16:41:54.348566",
-    "_id": "d4a7335f-f98d-4d93-96c8-17ae3e3c5624"
+    "detected_at": "2026-10-03T13:49:32.131759",
+    "_id": "af4c36c1-68c2-46ab-8b94-68e981ed8c62"
   },
   {
     "employee_id": "EMP1003",
     "anomaly_type": "privilege_change",
     "severity": "critical",
-    "detected_at": "2026-09-19T17:41:54.348566",
-    "_id": "ff0d3d29-a7a8-4459-9a27-c7de5353d01e"
+    "detected_at": "2026-10-03T14:49:32.131759",
+    "_id": "1f6ba09d-4c14-4a1a-91e6-2a351890bfd6"
   }
 ]
