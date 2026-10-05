@@ -1,7 +1,7 @@
-﻿# backend/app/seed_data.py
+# backend/app/seed_data.py
 from datetime import datetime, timedelta
-from app.database import engine, Base, SessionLocal, doc_db
-from app.models import User, Employee, Incident, Alert, AuditLog
+from app.database import engine, Base, SessionLocal, mongo_db
+from app.models import User, Employee, Incident, Alert, Evidence, AuditLog
 from app.auth import hash_password
 
 def seed_database():
@@ -27,6 +27,7 @@ def seed_database():
         existing_emp = db.query(Employee).first()
         if not existing_emp:
             employees = [
+                # Engineering peers (Elena & Liam)
                 Employee(
                     employee_id="EMP1001",
                     name="Elena Rostova",
@@ -38,6 +39,17 @@ def seed_database():
                     baseline_risk_score=18.5
                 ),
                 Employee(
+                    employee_id="EMP1005",
+                    name="Liam O'Connor",
+                    department="Engineering",
+                    designation="Frontend Developer",
+                    device_info="MacBook Air - Host: liam-fe-08",
+                    access_privileges="FRONTEND_REPO_RW, FIGMA_ORG",
+                    status="ACTIVE",
+                    baseline_risk_score=12.0
+                ),
+                # Finance (Jonathan)
+                Employee(
                     employee_id="EMP1002",
                     name="Jonathan Hayes",
                     department="Finance",
@@ -45,8 +57,9 @@ def seed_database():
                     device_info="Dell XPS 15 - Host: jhayes-fin-02",
                     access_privileges="FINANCE_PORTAL, ERP_GL_READ, STRIPE_DASHBOARD",
                     status="ACTIVE",
-                    baseline_risk_score=78.0 # Simulated high risk
+                    baseline_risk_score=78.0
                 ),
+                # Cloud Ops (Devon)
                 Employee(
                     employee_id="EMP1003",
                     name="Devon Miller",
@@ -55,8 +68,9 @@ def seed_database():
                     device_info="ThinkPad P1 - Host: devon-ops-linux",
                     access_privileges="AWS_ADMIN_SUPER, ROOT_SSH_BASTION, VAULT_OPERATOR",
                     status="UNDER_REVIEW",
-                    baseline_risk_score=89.5 # Simulated critical risk
+                    baseline_risk_score=89.5
                 ),
+                # HR (Amina)
                 Employee(
                     employee_id="EMP1004",
                     name="Amina Al-Mansoor",
@@ -67,16 +81,7 @@ def seed_database():
                     status="ACTIVE",
                     baseline_risk_score=14.0
                 ),
-                Employee(
-                    employee_id="EMP1005",
-                    name="Liam O'Connor",
-                    department="Engineering",
-                    designation="Frontend Developer",
-                    device_info="MacBook Air - Host: liam-fe-08",
-                    access_privileges="FRONTEND_REPO_RW, FIGMA_ORG",
-                    status="ACTIVE",
-                    baseline_risk_score=12.0
-                ),
+                # IT Ops (Sophia)
                 Employee(
                     employee_id="EMP1006",
                     name="Sophia Chen",
@@ -86,102 +91,137 @@ def seed_database():
                     access_privileges="POSTGRES_SUPERUSER, SNOWFLAKE_ADMIN",
                     status="ACTIVE",
                     baseline_risk_score=45.0
+                ),
+                # Solo Department (Legal - 0 peers edge case testing)
+                Employee(
+                    employee_id="EMP1008",
+                    name="Zoe Washington",
+                    department="Legal",
+                    designation="Chief Compliance Officer",
+                    device_info="Dell Latitude - Host: zoe-legal-01",
+                    access_privileges="LEGAL_DOCS_READ",
+                    status="ACTIVE",
+                    baseline_risk_score=8.0
                 )
             ]
             db.add_all(employees)
             db.commit()
             print(f"[INFO] Seeded {len(employees)} corporate employees.")
 
-            # Seed Document Store Baselines
-            for emp in employees:
-                doc_db.behavioral_baselines.insert_one({
-                    "employee_id": emp.employee_id,
-                    "avg_daily_events": 30,
-                    "avg_daily_download_mb": 25.0,
-                    "allowed_devices": [emp.device_info],
-                    "typical_work_hours": "09:00 - 18:00 UTC",
-                    "last_updated": datetime.utcnow().isoformat()
-                })
+        # 3. Seed Milestone 2 / 3 Rule & ML Anomalies Collections
+        now = datetime.utcnow()
+        # Always ensure rich rule anomalies exist
+        mongo_db["rule_anomalies"].delete_many({})
+        rule_anomalies = [
+            # Critical employee: Devon Miller (EMP1003) -> score ~86.1 (critical >= 75)
+            {"employee_id": "EMP1003", "anomaly_type": "privilege_change", "severity": "critical", "detected_at": now - timedelta(days=2)},
+            {"employee_id": "EMP1003", "anomaly_type": "privilege_change", "severity": "critical", "detected_at": now - timedelta(days=2, hours=1)},
+            {"employee_id": "EMP1003", "anomaly_type": "privilege_change", "severity": "critical", "detected_at": now - timedelta(days=2, hours=2)},
+            {"employee_id": "EMP1003", "anomaly_type": "data_exfiltration", "severity": "critical", "detected_at": now - timedelta(days=2, hours=4)},
+            {"employee_id": "EMP1003", "anomaly_type": "data_exfiltration", "severity": "critical", "detected_at": now - timedelta(days=2, hours=5)},
+            {"employee_id": "EMP1003", "anomaly_type": "unusual_hours", "severity": "high", "detected_at": now - timedelta(days=3)},
+            {"employee_id": "EMP1003", "anomaly_type": "unusual_ip", "severity": "high", "detected_at": now - timedelta(days=3, hours=3)},
+            {"employee_id": "EMP1003", "anomaly_type": "mass_download", "severity": "high", "detected_at": now - timedelta(days=5)},
 
-        # 3. Seed Document Store Activity Logs
-        if doc_db.activity_logs.count_documents() == 0:
-            now = datetime.utcnow()
-            initial_logs = [
-                # Normal logs for Elena
-                {"employee_id": "EMP1001", "event_type": "login", "details": {"ip_address": "10.14.2.19", "device": "elena-mbp-eng"}, "timestamp": now - timedelta(hours=8)},
-                {"employee_id": "EMP1001", "event_type": "git_commit", "details": {"repo": "auth-service", "lines": 82}, "timestamp": now - timedelta(hours=6)},
-                {"employee_id": "EMP1001", "event_type": "file_download", "details": {"file_name": "api_spec_v2.json", "size_mb": 3.4}, "timestamp": now - timedelta(hours=4)},
-                
-                # Suspicious logs for Jonathan Hayes (Finance)
-                {"employee_id": "EMP1002", "event_type": "login", "details": {"ip_address": "192.168.1.104", "device": "jhayes-fin-02", "is_off_hours": True}, "timestamp": now - timedelta(hours=22)},
-                {"employee_id": "EMP1002", "event_type": "file_download", "details": {"file_name": "q3_q4_unredacted_payroll.xlsx", "size_mb": 145.0, "is_confidential": True}, "timestamp": now - timedelta(hours=21, minutes=45)},
-                {"employee_id": "EMP1002", "event_type": "usb_connect", "details": {"vendor_id": "Kingston_DT_64G", "serial": "KDT-88219"}, "timestamp": now - timedelta(hours=21, minutes=30)},
+            # High risk employee: Jonathan Hayes (EMP1002) -> score ~53.5 (high >= 50)
+            {"employee_id": "EMP1002", "anomaly_type": "privilege_change", "severity": "medium", "detected_at": now - timedelta(days=1)},
+            {"employee_id": "EMP1002", "anomaly_type": "data_exfiltration", "severity": "high", "detected_at": now - timedelta(days=1, hours=2)},
+            {"employee_id": "EMP1002", "anomaly_type": "unusual_access", "severity": "medium", "detected_at": now - timedelta(days=4)},
+            {"employee_id": "EMP1002", "anomaly_type": "unusual_time", "severity": "medium", "detected_at": now - timedelta(days=4, hours=2)},
+            {"employee_id": "EMP1002", "anomaly_type": "unusual_device", "severity": "medium", "detected_at": now - timedelta(days=4, hours=4)},
 
-                # Highly critical compromised scenario for Devon Miller
-                {"employee_id": "EMP1003", "event_type": "login", "details": {"ip_address": "185.220.101.5", "geo_country": "TOR_EXIT", "is_off_hours": True}, "timestamp": now - timedelta(hours=14)},
-                {"employee_id": "EMP1003", "event_type": "privilege_escalation", "details": {"command": "sudo -i", "sudo": True}, "timestamp": now - timedelta(hours=13, minutes=50)},
-                {"employee_id": "EMP1003", "event_type": "database_query", "details": {"table_name": "customer_secrets", "rows_accessed": 12000}, "timestamp": now - timedelta(hours=13, minutes=40)},
-                {"employee_id": "EMP1003", "event_type": "file_download", "details": {"file_name": "vault_secrets_backup.tar.gz", "size_mb": 350.0, "is_confidential": True}, "timestamp": now - timedelta(hours=13, minutes=30)}
+            # Medium risk employee: Sophia Chen (EMP1006) -> score ~32.0 (medium >= 25)
+            {"employee_id": "EMP1006", "anomaly_type": "unusual_volume", "severity": "medium", "detected_at": now - timedelta(days=6)},
+            {"employee_id": "EMP1006", "anomaly_type": "unusual_query", "severity": "medium", "detected_at": now - timedelta(days=6, hours=2)},
+
+            # Low risk employee: Elena (EMP1001) -> score ~3.5 (low < 25)
+            {"employee_id": "EMP1001", "anomaly_type": "minor_timing", "severity": "low", "detected_at": now - timedelta(days=12)},
+        ]
+        mongo_db["rule_anomalies"].insert_many(rule_anomalies)
+
+        mongo_db["ml_anomalies"].delete_many({})
+        ml_anomalies = [
+            {"employee_id": "EMP1003", "is_anomaly": True, "anomaly_score": 0.94, "detected_at": now - timedelta(days=2)},
+            {"employee_id": "EMP1003", "is_anomaly": True, "anomaly_score": 0.91, "detected_at": now - timedelta(days=2, hours=3)},
+            {"employee_id": "EMP1003", "is_anomaly": True, "anomaly_score": 0.88, "detected_at": now - timedelta(days=3)},
+            {"employee_id": "EMP1003", "is_anomaly": True, "anomaly_score": 0.85, "detected_at": now - timedelta(days=4)},
+            {"employee_id": "EMP1002", "is_anomaly": True, "anomaly_score": 0.76, "detected_at": now - timedelta(days=1)},
+            {"employee_id": "EMP1002", "is_anomaly": True, "anomaly_score": 0.71, "detected_at": now - timedelta(days=2)},
+            {"employee_id": "EMP1006", "is_anomaly": False, "anomaly_score": 0.32, "detected_at": now - timedelta(days=6)},
+            {"employee_id": "EMP1001", "is_anomaly": False, "anomaly_score": 0.12, "detected_at": now - timedelta(days=12)},
+        ]
+        mongo_db["ml_anomalies"].insert_many(ml_anomalies)
+
+        # 4. Seed Activity Logs
+        if mongo_db["activity_logs"].count_documents() == 0:
+            logs = [
+                {"employee_id": "EMP1003", "event_type": "login", "details": {"ip": "185.220.101.5", "off_hours": True}, "timestamp": now - timedelta(days=2, hours=6)},
+                {"employee_id": "EMP1003", "event_type": "privilege_escalation", "details": {"cmd": "sudo su"}, "timestamp": now - timedelta(days=2, hours=5)},
+                {"employee_id": "EMP1003", "event_type": "database_dump", "details": {"rows": 12000}, "timestamp": now - timedelta(days=2, hours=4)},
+                {"employee_id": "EMP1002", "event_type": "file_download", "details": {"file": "payroll.xlsx", "size_mb": 140}, "timestamp": now - timedelta(days=1)},
+                {"employee_id": "EMP1001", "event_type": "git_commit", "details": {"lines": 45}, "timestamp": now - timedelta(hours=5)}
             ]
-            doc_db.activity_logs.insert_many(initial_logs)
-            print("[INFO] Seeded realistic activity telemetry in document store.")
+            mongo_db["activity_logs"].insert_many(logs)
 
-        # 4. Seed Initial Alerts
+        # 5. Seed Initial Alerts
         existing_alert = db.query(Alert).first()
         if not existing_alert:
             alerts = [
                 Alert(
                     alert_code="ALT-10082",
                     employee_id="EMP1003",
-                    severity="CRITICAL",
-                    title="Suspicious Off-Hours Root Privilege Escalation & Database Dump",
-                    message="Employee Devon Miller triggered critical alerts: Tor exit node IP login followed by sudo escalation and 12,000 secret keys query.",
-                    anomaly_type="PRIVILEGE_ESCALATION",
-                    risk_score=92.5,
-                    is_acknowledged=False,
-                    is_escalated=True
+                    severity="critical",
+                    message="Tor exit node login followed by sudo privilege escalation and customer secret keys query.",
+                    status="open",
+                    risk_score=92.5
                 ),
                 Alert(
                     alert_code="ALT-10083",
                     employee_id="EMP1002",
-                    severity="HIGH",
-                    title="Removable USB Mass Storage Connected Post-Download",
-                    message="Unapproved Kingston USB device connected after downloading confidential unredacted payroll document.",
-                    anomaly_type="USB_EXFILTRATION",
-                    risk_score=78.0,
-                    is_acknowledged=False,
-                    is_escalated=False
+                    severity="high",
+                    message="Unauthorized Kingston USB storage device mounted after unredacted payroll file download.",
+                    status="open",
+                    risk_score=78.0
                 ),
                 Alert(
                     alert_code="ALT-10084",
                     employee_id="EMP1006",
-                    severity="MEDIUM",
-                    title="Elevated Read Volume on Production DB Replica",
-                    message="Database read volume exceeded 3x normal hourly baseline during maintenance window.",
-                    anomaly_type="DATABASE_SCRAPING",
-                    risk_score=45.0,
-                    is_acknowledged=True,
-                    is_escalated=False
+                    severity="medium",
+                    message="Database read volume exceeded 3x normal hourly baseline during maintenance.",
+                    status="assigned",
+                    risk_score=45.0
                 )
             ]
             db.add_all(alerts)
             db.commit()
 
-        # 5. Seed Initial Incident
+        # 6. Seed Initial Incident & Evidence
         existing_inc = db.query(Incident).first()
         if not existing_inc:
-            incident = Incident(
+            inc = Incident(
                 incident_code="INC-2026-001",
                 employee_id="EMP1003",
-                title="Active Cloud Infrastructure Compromise & Data Exfiltration",
-                description="Devon Miller's account was observed executing unauthorized sudo commands and dumping customer vault credentials via Tor exit node.",
-                severity="CRITICAL",
-                status="INVESTIGATING",
-                assigned_to="analyst@itbis.security",
-                mitre_attack_technique="T1078 / T1548 - Valid Accounts & Privilege Escalation",
-                ai_summary="AI Analysis confirms high-confidence credential compromise. Recommend immediate session revocation and AWS IAM key rotation."
+                title="Cloud Infrastructure Compromise & Data Exfiltration",
+                severity="critical",
+                status="investigating",
+                summary="Auto-created from risk score 92.5",
+                assigned_to="analyst@itbis.security"
             )
-            db.add(incident)
+            db.add(inc)
+            db.commit()
+            db.refresh(inc)
+
+            ev1 = Evidence(
+                incident_id=inc.id,
+                note="Tor exit node IP 185.220.101.5 confirmed in firewall flow telemetry.",
+                added_by=1
+            )
+            ev2 = Evidence(
+                incident_id=inc.id,
+                note="AWS IAM credentials for shadow_admin_backdoor revoked by Cloud Security team.",
+                added_by=2
+            )
+            db.add_all([ev1, ev2])
             db.commit()
 
     finally:

@@ -1,4 +1,4 @@
-﻿# backend/app/database.py
+# backend/app/database.py
 import json
 import os
 import threading
@@ -27,7 +27,7 @@ def get_db():
         db.close()
 
 # -------------------------------------------------------------
-# 2. Document Store (MongoDB with Automatic Local Fallback)
+# 2. Document Store (MongoDB with Automatic Fallback)
 # -------------------------------------------------------------
 class InMemoryCollection:
     """Thread-safe document collection with MongoDB-compatible syntax."""
@@ -44,11 +44,12 @@ class InMemoryCollection:
                 with open(self.backing_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     for item in data:
-                        if "timestamp" in item and isinstance(item["timestamp"], str):
-                            try:
-                                item["timestamp"] = datetime.fromisoformat(item["timestamp"])
-                            except Exception:
-                                pass
+                        for ts_key in ["timestamp", "detected_at", "last_updated"]:
+                            if ts_key in item and isinstance(item[ts_key], str):
+                                try:
+                                    item[ts_key] = datetime.fromisoformat(item[ts_key])
+                                except Exception:
+                                    pass
                     self.docs = data
             except Exception:
                 self.docs = []
@@ -59,8 +60,9 @@ class InMemoryCollection:
                 serializable = []
                 for d in self.docs:
                     copied = dict(d)
-                    if "timestamp" in copied and isinstance(copied["timestamp"], datetime):
-                        copied["timestamp"] = copied["timestamp"].isoformat()
+                    for ts_key in ["timestamp", "detected_at", "last_updated"]:
+                        if ts_key in copied and isinstance(copied[ts_key], datetime):
+                            copied[ts_key] = copied[ts_key].isoformat()
                     if "_id" in copied:
                         copied["_id"] = str(copied["_id"])
                     serializable.append(copied)
@@ -75,7 +77,7 @@ class InMemoryCollection:
             if "_id" not in doc:
                 import uuid
                 doc["_id"] = str(uuid.uuid4())
-            if "timestamp" not in doc:
+            if "timestamp" not in doc and "detected_at" not in doc:
                 doc["timestamp"] = datetime.utcnow()
             self.docs.insert(0, doc)
             self._persist_to_file()
@@ -89,24 +91,28 @@ class InMemoryCollection:
                 if "_id" not in doc:
                     import uuid
                     doc["_id"] = str(uuid.uuid4())
-                if "timestamp" not in doc:
+                if "timestamp" not in doc and "detected_at" not in doc:
                     doc["timestamp"] = datetime.utcnow()
                 self.docs.insert(0, doc)
                 inserted_ids.append(doc["_id"])
             self._persist_to_file()
             return type("InsertManyResult", (), {"inserted_ids": inserted_ids})()
 
-    def find(self, query: Optional[Dict[str, Any]] = None, sort: Optional[List] = None, limit: int = 100) -> List[Dict[str, Any]]:
+    def find(self, query: Optional[Dict[str, Any]] = None, sort: Optional[List] = None, limit: int = 1000) -> List[Dict[str, Any]]:
         with self.lock:
             query = query or {}
             results = []
             for doc in self.docs:
                 matches = True
                 for k, v in query.items():
-                    if k == "employee_id" and doc.get("employee_id") != v:
-                        matches = False
-                        break
-                    elif k == "event_type" and doc.get("event_type") != v:
+                    if k == "$gte" or isinstance(v, dict):
+                        # Filter operator check, e.g. {"detected_at": {"$gte": cutoff}}
+                        if isinstance(v, dict) and "$gte" in v:
+                            doc_val = doc.get(k)
+                            if doc_val is None or doc_val < v["$gte"]:
+                                matches = False
+                                break
+                    elif doc.get(k) != v:
                         matches = False
                         break
                 if matches:
@@ -114,6 +120,16 @@ class InMemoryCollection:
                 if len(results) >= limit:
                     break
             return results
+
+    def sort(self, field: str, direction: int = -1):
+        class SortedQuery:
+            def __init__(self, docs, field, direction):
+                self._docs = sorted(docs, key=lambda x: x.get(field, datetime.min), reverse=(direction == -1))
+            def limit(self, count: int):
+                return self._docs[:count]
+            def __iter__(self):
+                return iter(self._docs)
+        return SortedQuery(self.docs, field, direction)
 
     def find_one(self, query: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         results = self.find(query=query, limit=1)
@@ -136,7 +152,7 @@ class InMemoryCollection:
 
 
 class DocumentDatabase:
-    """Provides access to activity_logs and behavioral_baselines collections."""
+    """Provides access to activity_logs, rule_anomalies, ml_anomalies, and behavioral_baselines collections."""
     def __init__(self):
         self.is_connected_to_mongo = False
         self.mongo_client = None
@@ -150,24 +166,42 @@ class DocumentDatabase:
             self.mongo_db = client[settings.MONGODB_DB_NAME]
             self.is_connected_to_mongo = True
             print("[INFO] Connected successfully to live MongoDB server.")
-        except Exception as e:
-            print(f"[INFO] MongoDB server not reachable at {settings.MONGODB_URI}. Using embedded document store. (Fallback Mode Active)")
-            
+        except Exception:
             data_dir = os.path.join(os.path.dirname(__file__), "..", "data")
             os.makedirs(data_dir, exist_ok=True)
             self._activity_logs = InMemoryCollection("activity_logs", os.path.join(data_dir, "activity_logs.json"))
+            self._rule_anomalies = InMemoryCollection("rule_anomalies", os.path.join(data_dir, "rule_anomalies.json"))
+            self._ml_anomalies = InMemoryCollection("ml_anomalies", os.path.join(data_dir, "ml_anomalies.json"))
             self._behavioral_baselines = InMemoryCollection("behavioral_baselines", os.path.join(data_dir, "behavioral_baselines.json"))
+
+    def __getitem__(self, name: str):
+        if self.is_connected_to_mongo and self.mongo_db is not None:
+            return self.mongo_db[name]
+        if name == "activity_logs":
+            return self._activity_logs
+        elif name == "rule_anomalies":
+            return self._rule_anomalies
+        elif name == "ml_anomalies":
+            return self._ml_anomalies
+        elif name == "behavioral_baselines":
+            return self._behavioral_baselines
+        return InMemoryCollection(name)
 
     @property
     def activity_logs(self):
-        if self.is_connected_to_mongo and self.mongo_db is not None:
-            return self.mongo_db["activity_logs"]
-        return self._activity_logs
+        return self["activity_logs"]
+
+    @property
+    def rule_anomalies(self):
+        return self["rule_anomalies"]
+
+    @property
+    def ml_anomalies(self):
+        return self["ml_anomalies"]
 
     @property
     def behavioral_baselines(self):
-        if self.is_connected_to_mongo and self.mongo_db is not None:
-            return self.mongo_db["behavioral_baselines"]
-        return self._behavioral_baselines
+        return self["behavioral_baselines"]
 
 doc_db = DocumentDatabase()
+mongo_db = doc_db  # Alias matching Milestone 3 specification

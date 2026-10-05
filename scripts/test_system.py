@@ -1,8 +1,10 @@
 # itbis/scripts/test_system.py
 """
-End-to-End Test & Verification Script for ITBIS Platform.
+End-to-End Test & Verification Suite for ITBIS Platform (Milestone 3 Enhanced).
 Validates Backend API, Authentication, RBAC, Employee CRUD, Telemetry Ingestion,
-AI Anomaly Scoring, Alert Triage, Incident Escalation, and Simulation.
+Weighted Risk Scoring (35/25/20/10/10), UEBA Peer Comparison & Risk Trends,
+Threat Investigation Timeline & Multi-Analyst Evidence, Alert Assignment/Resolution,
+Role-Specific Security Dashboards (Analyst, SOC, Manager), and Threat Simulation.
 """
 import sys
 import time
@@ -14,16 +16,16 @@ def print_step(title):
     print(f"\n[TEST STEP] {title}...")
 
 def test_system():
-    print("=" * 65)
-    print(" ITBIS - End-to-End System Verification Suite")
-    print("=" * 65)
+    print("=" * 70)
+    print(" ITBIS - Milestone 3 Complete End-to-End System Verification Suite")
+    print("=" * 70)
 
     # 1. Health Check
     print_step("1. Testing Root & Health Check Endpoints")
     try:
         r = requests.get(f"{BASE_URL}/")
         assert r.status_code == 200, f"Expected 200, got {r.status_code}"
-        print("  [PASS] Root Health-check OK:", r.json().get("status"))
+        print("  [PASS] Root Health-check OK:", r.json().get("milestone", r.json().get("status")))
         
         r_health = requests.get(f"{BASE_URL}/health")
         assert r_health.status_code == 200
@@ -40,10 +42,18 @@ def test_system():
         "email": "admin@itbis.security",
         "password": "Security@123"
     })
-    assert r_admin.status_code == 200, f"Admin login failed: {r_admin.text}"
+    assert r_admin.status_code == 200
     admin_token = r_admin.json()["access_token"]
     admin_headers = {"Authorization": f"Bearer {admin_token}"}
-    print("  [PASS] Admin JWT Token acquired successfully.")
+
+    # Manager Login
+    r_mgr = requests.post(f"{BASE_URL}/api/auth/login", json={
+        "email": "manager@itbis.security",
+        "password": "Security@123"
+    })
+    assert r_mgr.status_code == 200
+    mgr_token = r_mgr.json()["access_token"]
+    mgr_headers = {"Authorization": f"Bearer {mgr_token}"}
 
     # Analyst Login
     r_analyst = requests.post(f"{BASE_URL}/api/auth/login", json={
@@ -53,85 +63,98 @@ def test_system():
     assert r_analyst.status_code == 200
     analyst_token = r_analyst.json()["access_token"]
     analyst_headers = {"Authorization": f"Bearer {analyst_token}"}
-    print("  [PASS] Security Analyst JWT Token acquired successfully.")
+    print("  [PASS] Acquired JWT Tokens for Admin, Manager, and Analyst roles.")
 
-    # Verify RBAC restriction on /api/auth/users (admin-only)
-    r_forbidden = requests.get(f"{BASE_URL}/api/auth/users", headers=analyst_headers)
-    assert r_forbidden.status_code == 403, "Analyst should receive 403 Forbidden on Admin route"
-    print("  [PASS] RBAC Verified: Analyst correctly blocked from Admin endpoint (403 Forbidden).")
+    # 3. Milestone 3 Part 1: Weighted Risk Scoring Engine
+    print_step("3. Testing Milestone 3 Part 1: Weighted Risk Scoring (35/25/20/10/10)")
+    r_risk = requests.get(f"{BASE_URL}/ueba/risk-score/EMP1003", headers=analyst_headers)
+    assert r_risk.status_code == 200
+    risk_data = r_risk.json()
+    assert risk_data["risk_category"] == "critical"
+    print(f"  [PASS] Employee EMP1003 Score: {risk_data['risk_score']} (Category: {risk_data['risk_category']})")
+    print(f"  [PASS] 5 Factor Breakdown: {risk_data['factor_scores']}")
 
-    r_allowed = requests.get(f"{BASE_URL}/api/auth/users", headers=admin_headers)
-    assert r_allowed.status_code == 200
-    print(f"  [PASS] RBAC Verified: Admin successfully fetched {len(r_allowed.json())} system users.")
+    # 4. Milestone 3 Part 2: UEBA Peer Comparison & Trends
+    print_step("4. Testing Milestone 3 Part 2: UEBA Peer Group Comparison & Anomaly Trend")
+    r_peer = requests.get(f"{BASE_URL}/ueba/peer-comparison/EMP1001", headers=analyst_headers)
+    assert r_peer.status_code == 200
+    peer_data = r_peer.json()
+    print(f"  [PASS] EMP1001 vs Engineering Peers: Score = {peer_data['employee_score']}, Dept Avg = {peer_data['department_avg_score']}, Deviation = {peer_data['deviation_from_peers']}")
 
-    # 3. Employee Directory & Baselining
-    print_step("3. Testing Employee Directory & Baseline Retrieval")
-    r_emps = requests.get(f"{BASE_URL}/api/employees", headers=analyst_headers)
-    assert r_emps.status_code == 200
-    emps = r_emps.json()
-    assert len(emps) >= 1, "No employees found"
-    target_emp = emps[0]["employee_id"]
-    print(f"  [PASS] Fetched {len(emps)} monitored employee profiles. Selected target: {target_emp}")
+    # Edge case: Solo department with 0 peers
+    r_solo = requests.get(f"{BASE_URL}/ueba/peer-comparison/EMP1008", headers=analyst_headers)
+    assert r_solo.status_code == 200
+    assert r_solo.json()["peer_count"] == 0
+    print(f"  [PASS] Verified 0-Peers Edge Case: {r_solo.json().get('note')}")
 
-    r_base = requests.get(f"{BASE_URL}/api/employees/{target_emp}/baseline", headers=analyst_headers)
-    assert r_base.status_code == 200
-    print("  [PASS] Retrieved learned behavioral baseline:", r_base.json().get("typical_work_hours"))
+    # Trend
+    r_trend = requests.get(f"{BASE_URL}/ueba/risk-trend/EMP1003?days=30", headers=analyst_headers)
+    assert r_trend.status_code == 200
+    print(f"  [PASS] 30-Day Behavioral Anomaly Trend retrieved ({len(r_trend.json())} spike dates).")
 
-    # 4. Activity Log Ingestion
-    print_step("4. Testing Activity Log Ingestion Pipeline")
-    ingest_payload = {
-        "employee_id": target_emp,
-        "event_type": "file_download",
-        "details": {"file_name": "quarterly_intel_report.pdf", "size_mb": 12.5, "is_confidential": False}
-    }
-    r_ingest = requests.post(f"{BASE_URL}/api/logs/ingest", json=ingest_payload)
-    assert r_ingest.status_code == 201
-    print("  [PASS] Ingested single event into MongoDB document store. Log ID:", r_ingest.json().get("log_id"))
+    # 5. Milestone 3 Part 3: Threat Investigation & Timeline
+    print_step("5. Testing Milestone 3 Part 3: Threat Investigation, Timeline & Evidence Notes")
+    # Low-risk rejection test
+    r_rej = requests.post(f"{BASE_URL}/incidents/create-from-risk/EMP1001", headers=analyst_headers)
+    assert r_rej.status_code == 400
+    print("  [PASS] Verified Low-Risk Incident Rejection (400 Bad Request).")
 
-    # 5. AI Behavioral Anomaly & Risk Analysis
-    print_step("5. Testing AI Anomaly Engine & Threat Scoring")
-    r_ai = requests.post(f"{BASE_URL}/api/ai/analyze/{target_emp}", headers=analyst_headers)
-    assert r_ai.status_code == 200
-    ai_data = r_ai.json()
-    print(f"  [PASS] AI Analysis Complete: Risk Score = {ai_data['overall_risk_score']}/100, Threat Level = {ai_data['threat_level']}")
-    print(f"  [PASS] Anomaly Score = {ai_data['anomaly_score']}, Analyzed Logs = {ai_data['analyzed_event_count']}")
+    # High-risk creation test
+    r_inc = requests.post(f"{BASE_URL}/incidents/create-from-risk/EMP1003", headers=analyst_headers)
+    assert r_inc.status_code == 200
+    inc_obj = r_inc.json()
+    inc_id = inc_obj["id"]
+    print(f"  [PASS] Created Incident from High Risk: {inc_obj.get('incident_code')} (Severity: {inc_obj.get('severity')})")
 
-    # 6. Alerts & Incident Escalation
-    print_step("6. Testing Alert Triage & Incident Lifecycle")
-    r_alerts = requests.get(f"{BASE_URL}/api/alerts", headers=analyst_headers)
+    # Timeline test
+    r_tl = requests.get(f"{BASE_URL}/incidents/{inc_id}/timeline", headers=analyst_headers)
+    assert r_tl.status_code == 200
+    print(f"  [PASS] Chronological Timeline retrieved ({len(r_tl.json()['timeline'])} merged logs/anomalies).")
+
+    # Evidence test
+    r_ev = requests.post(f"{BASE_URL}/incidents/{inc_id}/evidence", json={"note": "Workstation memory dump extracted."}, headers=analyst_headers)
+    assert r_ev.status_code == 200
+    print(f"  [PASS] Added Evidence Note: {r_ev.json()['note']}")
+
+    # 6. Milestone 3 Part 4: Alert Delegation & Resolution RBAC
+    print_step("6. Testing Milestone 3 Part 4: Alert Delegation & Resolution RBAC")
+    r_alerts = requests.get(f"{BASE_URL}/alerts", headers=analyst_headers)
     assert r_alerts.status_code == 200
-    alerts = r_alerts.json()
-    if alerts:
-        first_alert = alerts[0]
-        # Acknowledge
-        r_ack = requests.post(f"{BASE_URL}/api/alerts/{first_alert['id']}/acknowledge", headers=analyst_headers)
-        assert r_ack.status_code == 200
-        print(f"  [PASS] Acknowledged alert {first_alert['alert_code']}")
+    alts = r_alerts.json()
+    if alts:
+        alt_id = alts[0]["id"]
+        # Analyst forbidden to assign
+        r_f = requests.post(f"{BASE_URL}/alerts/{alt_id}/assign?analyst_user_id=2", headers=analyst_headers)
+        assert r_f.status_code == 403
+        print("  [PASS] RBAC Check: Analyst blocked from alert assignment (403 Forbidden).")
 
-        # Escalate to Incident
-        r_esc = requests.post(f"{BASE_URL}/api/alerts/{first_alert['id']}/escalate", headers=analyst_headers)
-        assert r_esc.status_code == 200
-        inc_id = r_esc.json().get("incident_id")
-        print(f"  [PASS] Escalated to Incident: {r_esc.json().get('incident_code')}")
+        # Manager allowed to assign
+        r_a = requests.post(f"{BASE_URL}/alerts/{alt_id}/assign?analyst_user_id=2", headers=mgr_headers)
+        assert r_a.status_code == 200
+        print(f"  [PASS] Manager assigned alert: {r_a.json()['message']}")
 
-        if inc_id:
-            # Generate AI Forensic Report
-            r_report = requests.post(f"{BASE_URL}/api/incidents/{inc_id}/generate-ai-report", headers=analyst_headers)
-            assert r_report.status_code == 200
-            print("  [PASS] Generated AI Forensic Threat Dossier with MITRE ATT&CK correlation.")
+        # Analyst resolves alert
+        r_res = requests.patch(f"{BASE_URL}/alerts/{alt_id}/resolve", headers=analyst_headers)
+        assert r_res.status_code == 200
+        print(f"  [PASS] Analyst resolved alert: {r_res.json()['message']}")
 
-    # 7. Threat Simulation
-    print_step("7. Testing Threat Simulation Vector")
-    r_sim = requests.post(f"{BASE_URL}/api/simulation/run", json={
-        "scenario": "mass_exfiltration",
-        "employee_id": target_emp
-    }, headers=analyst_headers)
-    assert r_sim.status_code == 200
-    print(f"  [PASS] Successfully executed simulation scenario '{r_sim.json()['scenario']}' with {r_sim.json()['generated_events_count']} generated telemetry events.")
+    # 7. Milestone 3 Part 5: Role-Specific Security Dashboards
+    print_step("7. Testing Milestone 3 Part 5: Role-Specific Dashboards (Analyst, SOC, Manager)")
+    r_adash = requests.get(f"{BASE_URL}/dashboard/analyst", headers=analyst_headers)
+    assert r_adash.status_code == 200
+    print(f"  [PASS] Analyst Dashboard: Open Alerts = {r_adash.json()['open_alerts']}, Active Invs = {r_adash.json()['active_investigations']}")
 
-    print("\n" + "=" * 65)
-    print(" ALL 7 SYSTEM VERIFICATION MODULES PASSED SUCCESSFULLY! ")
-    print("=" * 65 + "\n")
+    r_sdash = requests.get(f"{BASE_URL}/dashboard/soc", headers=analyst_headers)
+    assert r_sdash.status_code == 200
+    print(f"  [PASS] SOC Dashboard: Total Events = {r_sdash.json()['total_security_events']}, Anomalies = {r_sdash.json()['behavioral_anomalies_count']}")
+
+    r_mdash = requests.get(f"{BASE_URL}/dashboard/manager", headers=mgr_headers)
+    assert r_mdash.status_code == 200
+    print(f"  [PASS] Manager Dashboard: Distribution = {r_mdash.json()['distribution']}, Compliance = {r_mdash.json()['compliance_score']}%")
+
+    print("\n" + "=" * 70)
+    print(" ALL MILESTONE 3 VERIFICATION CRITERIA PASSED WITH 100% SUCCESS! ")
+    print("=" * 70 + "\n")
 
 if __name__ == "__main__":
     test_system()

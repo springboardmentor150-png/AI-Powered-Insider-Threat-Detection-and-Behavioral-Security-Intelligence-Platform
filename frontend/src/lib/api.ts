@@ -45,12 +45,30 @@ export const logAPI = {
   getStats: () => api.get("/logs/stats"),
 };
 
-// Alert Endpoints
+// Alert Endpoints (Milestone 3 Enhanced)
 export const alertAPI = {
-  getAll: (params?: { severity?: string; employee_id?: string; is_acknowledged?: boolean; limit?: number }) =>
+  getAll: (params?: { severity?: string; employee_id?: string; is_acknowledged?: boolean; status?: string; limit?: number }) =>
     api.get("/alerts", { params }),
+  assign: (id: number, analyst_user_id: number) => api.post(`/alerts/${id}/assign?analyst_user_id=${analyst_user_id}`),
+  resolve: (id: number) => api.patch(`/alerts/${id}/resolve`),
   acknowledge: (id: number) => api.post(`/alerts/${id}/acknowledge`),
   escalate: (id: number) => api.post(`/alerts/${id}/escalate`),
+  getRiskDistribution: () => api.get("/analytics/risk-distribution"),
+};
+
+// UEBA Intelligence Endpoints (Milestone 3)
+export const uebaAPI = {
+  getRiskScore: (employeeId: string) => api.get(`/ueba/risk-score/${employeeId}`),
+  getPeerComparison: (employeeId: string) => api.get(`/ueba/peer-comparison/${employeeId}`),
+  getRiskTrend: (employeeId: string, days: number = 30) => api.get(`/ueba/risk-trend/${employeeId}?days=${days}`),
+};
+
+// Threat Investigation & Evidence Endpoints (Milestone 3)
+export const investigationAPI = {
+  createFromRisk: (employeeId: string) => api.post(`/incidents/create-from-risk/${employeeId}`),
+  getTimeline: (incidentId: number) => api.get(`/incidents/${incidentId}/timeline`),
+  addEvidence: (incidentId: number, note: string) => api.post(`/incidents/${incidentId}/evidence`, { note }),
+  listEvidence: (incidentId: number) => api.get(`/incidents/${incidentId}/evidence`),
 };
 
 // Incident Workbench Endpoints
@@ -62,6 +80,13 @@ export const incidentAPI = {
   updateStatus: (id: number, data: { status: string; assigned_to?: string; ai_summary?: string }) =>
     api.patch(`/incidents/${id}/status`, data),
   generateAIReport: (id: number) => api.post(`/incidents/${id}/generate-ai-report`),
+};
+
+// Security Dashboard Endpoints (Milestone 3)
+export const dashboardAPI = {
+  getAnalystDashboard: () => api.get("/dashboard/analyst"),
+  getSocDashboard: () => api.get("/dashboard/soc"),
+  getManagerDashboard: () => api.get("/dashboard/manager"),
 };
 
 // AI & Behavioral Analysis Endpoints

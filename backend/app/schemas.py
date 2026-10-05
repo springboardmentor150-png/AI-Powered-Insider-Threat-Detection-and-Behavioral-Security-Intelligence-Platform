@@ -1,4 +1,4 @@
-﻿# backend/app/schemas.py
+# backend/app/schemas.py
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, ConfigDict, Field
@@ -76,18 +76,20 @@ class ActivityLogOut(BaseModel):
     timestamp: datetime
     details: Dict[str, Any]
 
-# --- Alert Schemas ---
+# --- Alert Schemas (Milestone 3) ---
 class AlertOut(BaseModel):
     id: int
-    alert_code: str
+    alert_code: Optional[str] = None
     employee_id: str
     severity: str
-    title: str
+    title: Optional[str] = None
     message: str
+    status: Optional[str] = "open"
     anomaly_type: Optional[str] = None
-    risk_score: float
-    is_acknowledged: bool
-    is_escalated: bool
+    risk_score: Optional[float] = 50.0
+    is_acknowledged: Optional[bool] = False
+    is_escalated: Optional[bool] = False
+    assigned_to: Optional[int] = None
     incident_id: Optional[int] = None
     created_at: datetime
     employee: Optional[EmployeeOut] = None
@@ -96,12 +98,13 @@ class AlertOut(BaseModel):
 class AlertAcknowledge(BaseModel):
     is_acknowledged: bool = True
 
-# --- Incident Schemas ---
+# --- Incident Schemas (Milestone 3) ---
 class IncidentCreate(BaseModel):
     employee_id: str
-    title: str
+    title: Optional[str] = None
     description: Optional[str] = None
-    severity: str = "HIGH"
+    severity: str = "high"
+    summary: Optional[str] = None
     assigned_to: Optional[str] = None
     mitre_attack_technique: Optional[str] = None
 
@@ -112,17 +115,18 @@ class IncidentStatusUpdate(BaseModel):
 
 class IncidentOut(BaseModel):
     id: int
-    incident_code: str
+    incident_code: Optional[str] = None
     employee_id: str
-    title: str
+    title: Optional[str] = None
     description: Optional[str] = None
     severity: str
-    status: str
+    status: str = "open"
+    summary: Optional[str] = None
     assigned_to: Optional[str] = None
     mitre_attack_technique: Optional[str] = None
     ai_summary: Optional[str] = None
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
     employee: Optional[EmployeeOut] = None
     model_config = ConfigDict(from_attributes=True)
 

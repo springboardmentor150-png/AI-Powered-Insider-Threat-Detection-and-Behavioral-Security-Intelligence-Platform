@@ -7,6 +7,42 @@
       "Kali Linux 2026.1"
     ],
     "typical_work_hours": "09:00 - 18:00 UTC",
+    "last_updated": "2026-09-21T17:41:31.745331+00:00",
+    "_id": "ffa5931d-daaf-4521-8f1b-ad93c167cf14",
+    "timestamp": "2026-09-21T17:41:31.745387"
+  },
+  {
+    "employee_id": "EMP9999",
+    "avg_daily_events": 25,
+    "avg_daily_download_mb": 18.5,
+    "allowed_devices": [
+      "Kali Linux 2026.1"
+    ],
+    "typical_work_hours": "09:00 - 18:00 UTC",
+    "last_updated": "2026-09-21T17:27:56.097387+00:00",
+    "_id": "ca18aabe-c185-419b-83cf-095f4cae5363",
+    "timestamp": "2026-09-21T17:27:56.097448"
+  },
+  {
+    "employee_id": "EMP9999",
+    "avg_daily_events": 25,
+    "avg_daily_download_mb": 18.5,
+    "allowed_devices": [
+      "Kali Linux 2026.1"
+    ],
+    "typical_work_hours": "09:00 - 18:00 UTC",
+    "last_updated": "2026-09-21T17:27:10.388769+00:00",
+    "_id": "f4d066c4-6f4c-4a44-8714-009d00a89b9b",
+    "timestamp": "2026-09-21T17:27:10.388823"
+  },
+  {
+    "employee_id": "EMP9999",
+    "avg_daily_events": 25,
+    "avg_daily_download_mb": 18.5,
+    "allowed_devices": [
+      "Kali Linux 2026.1"
+    ],
+    "typical_work_hours": "09:00 - 18:00 UTC",
     "last_updated": "2026-09-02T13:41:07.547855",
     "_id": "c79c356b-ac66-4007-9eaf-9d24099022b7",
     "timestamp": "2026-09-02T13:41:07.552463"

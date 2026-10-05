@@ -1,8 +1,8 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { employeeAPI, aiAPI, logAPI } from "@/lib/api";
+import { employeeAPI, aiAPI, logAPI, uebaAPI, investigationAPI } from "@/lib/api";
 import { ThreatScoreBadge } from "@/components/ThreatScoreBadge";
 import {
   Users,
@@ -18,7 +18,11 @@ import {
   X,
   AlertCircle,
   TrendingUp,
-  Sparkles
+  Sparkles,
+  BarChart,
+  FolderPlus,
+  ArrowUpRight,
+  GitFork
 } from "lucide-react";
 
 export default function EmployeesPage() {
@@ -26,11 +30,14 @@ export default function EmployeesPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [selectedEmp, setSelectedEmp] = useState<any | null>(null);
   const [selectedBaseline, setSelectedBaseline] = useState<any | null>(null);
+  const [peerComparison, setPeerComparison] = useState<any | null>(null);
+  const [riskTrend, setRiskTrend] = useState<any[]>([]);
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
+  const [incidentCreating, setIncidentCreating] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any | null>(null);
 
   // Onboarding Modal State
@@ -63,14 +70,18 @@ export default function EmployeesPage() {
     setSelectedEmp(emp);
     setAnalysisResult(null);
     try {
-      const [baselineRes, logsRes] = await Promise.all([
+      const [baselineRes, logsRes, peerRes, trendRes] = await Promise.all([
         employeeAPI.getBaseline(emp.employee_id),
         logAPI.getAll({ employee_id: emp.employee_id, limit: 10 }),
+        uebaAPI.getPeerComparison(emp.employee_id),
+        uebaAPI.getRiskTrend(emp.employee_id, 30),
       ]);
       setSelectedBaseline(baselineRes.data);
       setRecentLogs(logsRes.data || []);
+      setPeerComparison(peerRes.data);
+      setRiskTrend(trendRes.data || []);
     } catch (e) {
-      console.error("Error loading baseline:", e);
+      console.error("Error loading baseline/UEBA:", e);
     }
   };
 
@@ -84,13 +95,25 @@ export default function EmployeesPage() {
     try {
       const res = await aiAPI.analyzeEmployee(selectedEmp.employee_id);
       setAnalysisResult(res.data);
-      // update employee list score
       setSelectedEmp((prev: any) => ({ ...prev, baseline_risk_score: res.data.overall_risk_score }));
       fetchEmployees();
     } catch (e) {
       console.error("AI Analysis error:", e);
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  const handleCreateIncidentFromRisk = async () => {
+    if (!selectedEmp) return;
+    setIncidentCreating(true);
+    try {
+      const res = await investigationAPI.createFromRisk(selectedEmp.employee_id);
+      alert(`Incident ${res.data.incident_code || res.data.id} successfully created for ${selectedEmp.name}!`);
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Could not create incident. Risk score may be too low.");
+    } finally {
+      setIncidentCreating(false);
     }
   };
 
@@ -129,12 +152,17 @@ export default function EmployeesPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 uppercase">
+              Milestone 3 UEBA Module
+            </span>
+          </div>
+          <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2 mt-1">
             <Users className="w-5 h-5 text-cyan-400" />
-            <span>Employee Behavioral Directory & Baselines</span>
+            <span>Employee Behavioral Directory & UEBA Analytics</span>
           </h1>
           <p className="text-xs text-slate-400">
-            Monitored workforce profiles, historical telemetry baselines, and individual risk scores.
+            Weighted risk scoring, peer group comparison, 30-day anomaly trends & incident creation.
           </p>
         </div>
 
@@ -175,6 +203,7 @@ export default function EmployeesPage() {
             <option value="CLOUD OPS">Cloud Ops</option>
             <option value="HUMAN RESOURCES">Human Resources</option>
             <option value="IT OPS">IT Ops</option>
+            <option value="LEGAL">Legal</option>
           </select>
         </div>
       </div>
@@ -236,45 +265,90 @@ export default function EmployeesPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handleCreateIncidentFromRisk}
+                    disabled={incidentCreating}
+                    title="Spawn incident if risk >= 50"
+                    className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-purple-900/40 hover:bg-purple-800/50 text-purple-300 border border-purple-700/60 text-xs font-semibold transition"
+                  >
+                    <FolderPlus className="w-3.5 h-3.5" />
+                    <span>Create Incident</span>
+                  </button>
                   <button
                     onClick={handleAnalyzeSelected}
                     disabled={analyzing}
                     className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-semibold shadow-lg shadow-cyan-600/20 transition"
                   >
                     <Sparkles className={`w-3.5 h-3.5 ${analyzing ? "animate-spin" : ""}`} />
-                    <span>{analyzing ? "Evaluating..." : "Run AI Anomaly Check"}</span>
+                    <span>{analyzing ? "Evaluating..." : "Run AI Check"}</span>
                   </button>
                   <ThreatScoreBadge score={selectedEmp.baseline_risk_score || 15} size="lg" />
                 </div>
               </div>
 
-              {/* AI Diagnostic Output Banner */}
-              {analysisResult && (
-                <div className="p-4 rounded-2xl bg-slate-950 border border-cyan-500/40 space-y-3 animate-fade-in">
+              {/* Milestone 3: UEBA Peer Group Comparison Card */}
+              {peerComparison && (
+                <div className="p-4 rounded-2xl bg-slate-950/70 border border-purple-500/30 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5 font-mono">
-                      <Cpu className="w-4 h-4 text-cyan-400" />
-                      AI Behavioral Analysis Findings
+                    <span className="text-xs font-bold text-purple-300 flex items-center gap-1.5 font-mono">
+                      <GitFork className="w-4 h-4 text-purple-400" />
+                      Part 2: UEBA Peer Group Comparison ({selectedEmp.department})
                     </span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
-                      Anomaly Score: {(analysisResult.anomaly_score * 100).toFixed(0)}%
+                      Peers Evaluated: {peerComparison.peer_count}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-200 leading-relaxed font-sans">
-                    {analysisResult.ai_narrative}
-                  </p>
-                  {analysisResult.top_risk_factors?.length > 0 && (
-                    <div className="space-y-1 pt-2 border-t border-slate-800">
-                      <div className="text-[10px] font-mono text-slate-400 uppercase">Top Risk Drivers:</div>
-                      {analysisResult.top_risk_factors.map((f: string, idx: number) => (
-                        <div key={idx} className="text-xs text-rose-300 font-medium flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                          {f}
+
+                  {peerComparison.peer_count > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                      <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <div className="text-[10px] text-slate-400 font-mono">Employee Score</div>
+                        <div className="text-lg font-bold text-white font-mono">{peerComparison.employee_score}</div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <div className="text-[10px] text-slate-400 font-mono">Department Peer Avg</div>
+                        <div className="text-lg font-bold text-cyan-400 font-mono">{peerComparison.department_avg_score}</div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <div className="text-[10px] text-slate-400 font-mono">Deviation From Peers</div>
+                        <div className={`text-lg font-bold font-mono ${peerComparison.deviation_from_peers > 0 ? "text-rose-400" : "text-emerald-400"}`}>
+                          {peerComparison.deviation_from_peers > 0 ? `+${peerComparison.deviation_from_peers}` : peerComparison.deviation_from_peers}
                         </div>
-                      ))}
+                      </div>
                     </div>
+                  ) : (
+                    <p className="text-xs text-slate-400 italic bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+                      {peerComparison.note || "No peers in this department for statistical baseline comparison."}
+                    </p>
                   )}
+                </div>
+              )}
+
+              {/* Milestone 3: 30-Day Behavioral Trend Histogram */}
+              {riskTrend.length > 0 && (
+                <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5 font-mono">
+                      <TrendingUp className="w-4 h-4 text-cyan-400" />
+                      30-Day Anomaly Detection Trend
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400">{riskTrend.length} Spike Dates</span>
+                  </div>
+                  <div className="flex items-end gap-2 h-20 pt-2 overflow-x-auto">
+                    {riskTrend.map((item, idx) => (
+                      <div key={idx} className="flex flex-col items-center flex-1 min-w-[36px]">
+                        <div
+                          className="w-full rounded-t bg-cyan-500/80 hover:bg-cyan-400 transition"
+                          style={{ height: `${Math.min(item.anomaly_count * 20, 60)}px` }}
+                          title={`${item.date}: ${item.anomaly_count} anomalies`}
+                        />
+                        <span className="text-[9px] font-mono text-slate-500 mt-1 truncate w-full text-center">
+                          {item.date.slice(5)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -313,52 +387,6 @@ export default function EmployeesPage() {
                       {selectedEmp.device_info || "Standard Workstation"}
                     </p>
                   </div>
-                </div>
-              </div>
-
-              {/* Privileges & Access Profile */}
-              <div className="space-y-2">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">
-                  Provisioned Access Rights
-                </h3>
-                <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-wrap gap-2">
-                  {(selectedEmp.access_privileges || "STANDARD_USER_ACCESS")
-                    .split(",")
-                    .map((priv: string, idx: number) => (
-                      <span
-                        key={idx}
-                        className="text-[11px] font-mono px-2.5 py-1 rounded bg-slate-800/80 text-cyan-300 border border-slate-700"
-                      >
-                        {priv.trim()}
-                      </span>
-                    ))}
-                </div>
-              </div>
-
-              {/* Recent Activity Mini-Stream */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">
-                  Recent Telemetry Events (MongoDB Store)
-                </h3>
-                <div className="space-y-2">
-                  {recentLogs.length > 0 ? (
-                    recentLogs.slice(0, 4).map((log, idx) => (
-                      <div
-                        key={idx}
-                        className="p-3 rounded-xl bg-slate-950/40 border border-slate-800 flex items-center justify-between text-xs"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <Activity className="w-3.5 h-3.5 text-cyan-400" />
-                          <span className="font-mono font-semibold text-slate-200">{log.event_type}</span>
-                        </div>
-                        <span className="text-[11px] font-mono text-slate-400">
-                          {new Date(log.timestamp).toLocaleTimeString()}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-xs text-slate-500 italic">No telemetry ingested yet for this identity.</p>
-                  )}
                 </div>
               </div>
             </div>
