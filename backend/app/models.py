@@ -40,3 +40,22 @@ class Alert(Base):
     severity = Column(String)
     message = Column(String)
     created_at = Column(String)
+class ActivityLog(Base):
+    __tablename__ = "activity_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, nullable=False)
+    event_type = Column(String, nullable=False)
+    timestamp = Column(String, nullable=False)
+    details = Column(String)
+
+class BehavioralBaseline(Base):
+    __tablename__ = "behavioral_baselines"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, nullable=False)
+    indicator = Column(String, nullable=False)
+    typical_value = Column(String, nullable=False)
+    std_deviation = Column(String, nullable=False)
+    sample_size = Column(Integer, nullable=False)
+    last_updated = Column(String, nullable=False)

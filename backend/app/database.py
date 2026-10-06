@@ -1,5 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+from pymongo import MongoClient
+
+# =========================
+# SQLite Database
+# =========================
 
 DATABASE_URL = "sqlite:///./itbis.db"
 
@@ -23,3 +28,18 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# =========================
+# MongoDB Database
+# =========================
+
+MONGO_URL = "mongodb://localhost:27017"
+
+mongo_client = MongoClient(MONGO_URL)
+
+mongo_db = mongo_client["itbis"]
+
+
+def get_mongo_db():
+    return mongo_db
