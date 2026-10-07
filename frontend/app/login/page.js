@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function Login(){return <div className="login"><div className="loginbox"><h1>ITBIS</h1><p className="muted">Milestone 3 Security Platform</p><label>Email</label><input placeholder="analyst@itbis.local"/><label>Password</label><input type="password" placeholder="••••••••"/><Link className="btn" href="/" style={{display:"block",textAlign:"center"}}>Login</Link><p className="muted" style={{fontSize:12,marginTop:18}}>Demo frontend login. M3 APIs are available in Swagger.</p></div></div>}

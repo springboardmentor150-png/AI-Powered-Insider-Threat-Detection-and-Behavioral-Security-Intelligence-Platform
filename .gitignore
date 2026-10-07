@@ -3,3 +3,8 @@ __pycache__/
 *.pyc
 .env
 backend/itbis.db
+
+backend/venv/
+backend/*.db
+__pycache__/
+*.pyc

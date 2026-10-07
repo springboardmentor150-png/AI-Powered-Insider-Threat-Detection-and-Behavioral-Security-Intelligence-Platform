@@ -1,61 +1,38 @@
-from sqlalchemy import Column, Integer, String
-from .database import Base
-
-
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    password_hash = Column(String, nullable=False)
-    role = Column(String, nullable=False)
-
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
+from app.database import Base
 
 class Employee(Base):
     __tablename__ = "employees"
-
-    id = Column(Integer, primary_key=True, index=True)
-    employee_id = Column(String, unique=True, index=True, nullable=False)
+    id = Column(Integer, primary_key=True)
+    employee_id = Column(String, unique=True, nullable=False)
     name = Column(String, nullable=False)
-    department = Column(String)
-    designation = Column(String)
-    manager_id = Column(Integer)
-
+    department = Column(String, nullable=False)
+    email = Column(String)
 
 class Incident(Base):
     __tablename__ = "incidents"
+    id = Column(Integer, primary_key=True)
+    employee_id = Column(String, nullable=False)
+    status = Column(String, default="open")
+    severity = Column(String, nullable=False)
+    summary = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
-    id = Column(Integer, primary_key=True, index=True)
-    employee_id = Column(Integer)
-    status = Column(String)
-    severity = Column(String)
-    created_at = Column(String)
-
+class Evidence(Base):
+    __tablename__ = "evidence"
+    id = Column(Integer, primary_key=True)
+    incident_id = Column(Integer, ForeignKey("incidents.id"), nullable=False)
+    note = Column(Text, nullable=False)
+    added_by = Column(Integer, nullable=True)
+    added_at = Column(DateTime, default=datetime.utcnow)
 
 class Alert(Base):
     __tablename__ = "alerts"
-
-    id = Column(Integer, primary_key=True, index=True)
-    employee_id = Column(Integer)
-    severity = Column(String)
-    message = Column(String)
-    created_at = Column(String)
-class ActivityLog(Base):
-    __tablename__ = "activity_logs"
-
-    id = Column(Integer, primary_key=True, index=True)
-    employee_id = Column(Integer, nullable=False)
-    event_type = Column(String, nullable=False)
-    timestamp = Column(String, nullable=False)
-    details = Column(String)
-
-class BehavioralBaseline(Base):
-    __tablename__ = "behavioral_baselines"
-
-    id = Column(Integer, primary_key=True, index=True)
-    employee_id = Column(Integer, nullable=False)
-    indicator = Column(String, nullable=False)
-    typical_value = Column(String, nullable=False)
-    std_deviation = Column(String, nullable=False)
-    sample_size = Column(Integer, nullable=False)
-    last_updated = Column(String, nullable=False)
+    id = Column(Integer, primary_key=True)
+    employee_id = Column(String, nullable=False)
+    severity = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+    status = Column(String, default="open")
+    assigned_to = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
