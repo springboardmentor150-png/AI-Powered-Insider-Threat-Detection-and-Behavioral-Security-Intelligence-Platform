@@ -41,6 +41,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# ML Models
+*.pkl
+models/
+
 # IDE / OS
 .idea/
 .vscode/
