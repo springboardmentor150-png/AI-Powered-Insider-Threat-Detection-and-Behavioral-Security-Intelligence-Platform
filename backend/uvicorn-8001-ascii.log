@@ -1,0 +1,511 @@
+.\venv\Scripts\uvicorn.exe : 
+INFO:     Started server 
+process [24132]
+At line:1 char:1
++ .\venv\Scripts\uvicorn.exe 
+app.main:app --port 8001 > 
+uvicorn-8001.lo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo           
+   : NotSpecified: (INFO:    
+     Started server proces   
+ s [24132]:String) [], Re    
+moteException
+    + FullyQualifiedErrorId  
+   : NativeCommandError
+ 
+INFO:     Waiting for 
+application startup.
+INFO:     Application 
+startup complete.
+INFO:     Uvicorn running on 
+http://127.0.0.1:8001 (Press 
+CTRL+C to quit)
+(trapped) error reading 
+bcrypt version
+Traceback (most recent call 
+last):
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\passlib\h
+andlers\bcrypt.py", line 
+620, in _load_backend_mixin
+    version = 
+_bcrypt.__about__.__version__
+              
+^^^^^^^^^^^^^^^^^
+AttributeError: module 
+'bcrypt' has no attribute 
+'__about__'
+INFO:     127.0.0.1:64358 - "POST /auth/signup HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI 
+application
+Traceback (most recent call 
+last):
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\uvicorn\p
+rotocols\http\h11_impl.py", 
+line 416, in run_asgi
+    result = await app(  # 
+type: 
+ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^
+        self.scope, 
+self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\uvicorn\m
+iddleware\proxy_headers.py", 
+line 63, in __call__
+    return await 
+self.app(scope, receive, 
+send)
+           ^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\fastapi\a
+pplications.py", line 1163, 
+in __call__
+    await 
+super().__call__(scope, 
+receive, send)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\starlette
+\applications.py", line 96, 
+in __call__
+    await 
+self.middleware_stack(scope, 
+receive, send)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\starlette
+\middleware\errors.py", line 
+186, in __call__
+    raise exc
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\starlette
+\middleware\errors.py", line 
+164, in __call__
+    await self.app(scope, 
+receive, _send)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\starlette
+\middleware\cors.py", line 
+88, in __call__
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\starlette
+\middleware\exceptions.py", 
+line 63, in __call__
+    await wrap_app_handling_e
+xceptions(self.app, 
+conn)(scope, receive, send)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\starlette
+\_exception_handler.py", 
+line 53, in wrapped_app
+    raise exc
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\starlette
+\_exception_handler.py", 
+line 42, in wrapped_app
+    await app(scope, 
+receive, sender)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\fastapi\m
+iddleware\asyncexitstack.py",
+ line 18, in __call__
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\starlette
+\routing.py", line 670, in 
+__call__
+    await 
+self.middleware_stack(scope, 
+receive, send)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\fastapi\r
+outing.py", line 2734, in app
+    await 
+route.handle(scope, receive, 
+send)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\fastapi\r
+outing.py", line 1780, in 
+handle
+    await self.original_route
+r.handle(scope, receive, 
+send)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\fastapi\r
+outing.py", line 2789, in 
+handle
+    await included_router._ha
+ndle_selected(scope, 
+receive, send)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\fastapi\r
+outing.py", line 1800, in 
+_handle_selected
+    await 
+original_route.handle(scope, 
+receive, send)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\fastapi\r
+outing.py", line 1279, in 
+handle
+    await app(scope, 
+receive, send)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\fastapi\r
+outing.py", line 158, in app
+    await wrap_app_handling_e
+xceptions(app, 
+request)(scope, receive, 
+send)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\starlette
+\_exception_handler.py", 
+line 53, in wrapped_app
+    raise exc
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\starlette
+\_exception_handler.py", 
+line 42, in wrapped_app
+    await app(scope, 
+receive, sender)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\fastapi\r
+outing.py", line 144, in app
+    response = await 
+f(request)
+               
+^^^^^^^^^^^^^^^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\fastapi\r
+outing.py", line 706, in app
+    raw_response = await 
+run_endpoint_function(
+                   
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\fastapi\r
+outing.py", line 354, in 
+run_endpoint_function
+    return await run_in_threa
+dpool(dependant.call, 
+**values)
+           ^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\starlette
+\concurrency.py", line 34, 
+in run_in_threadpool
+    return await anyio.to_thr
+ead.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\anyio\to_
+thread.py", line 65, in 
+run_sync
+    return await get_async_ba
+ckend().run_sync_in_worker_th
+read(
+           ^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^
+        func, args, abandon_o
+n_cancel=abandon_on_cancel, 
+limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\anyio\_ba
+ckends\_asyncio.py", line 
+2641, in 
+run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\anyio\_ba
+ckends\_asyncio.py", line 
+1033, in run
+    result = 
+context.run(func, *args)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\app
+\routes\auth_routes.py", 
+line 21, in signup
+    hashed_pwd = 
+hash_password(user.password)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\app
+\auth.py", line 16, in 
+hash_password
+    return 
+pwd_context.hash(password)
+           
+~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\passlib\c
+ontext.py", line 2258, in 
+hash
+    return 
+record.hash(secret, **kwds)
+           
+~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\passlib\u
+tils\handlers.py", line 779, 
+in hash
+    self.checksum = 
+self._calc_checksum(secret)
+                    
+~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\passlib\h
+andlers\bcrypt.py", line 
+591, in _calc_checksum
+    
+self._stub_requires_backend()
+    
+~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\passlib\u
+tils\handlers.py", line 
+2254, in 
+_stub_requires_backend
+    cls.set_backend()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\passlib\u
+tils\handlers.py", line 
+2156, in set_backend
+    return 
+owner.set_backend(name, 
+dryrun=dryrun)
+           ~~~~~~~~~~~~~~~~~^
+^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\passlib\u
+tils\handlers.py", line 
+2163, in set_backend
+    return 
+cls.set_backend(name, 
+dryrun=dryrun)
+           ~~~~~~~~~~~~~~~^^^
+^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\passlib\u
+tils\handlers.py", line 
+2188, in set_backend
+    cls._set_backend(name, 
+dryrun)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+^^^^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\passlib\u
+tils\handlers.py", line 
+2311, in _set_backend
+    
+super(SubclassBackendMixin, 
+cls)._set_backend(name, 
+dryrun)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+^^^^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\passlib\u
+tils\handlers.py", line 
+2224, in _set_backend
+    ok = loader(**kwds)
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\passlib\h
+andlers\bcrypt.py", line 
+626, in _load_backend_mixin
+    return mixin_cls._finaliz
+e_backend_mixin(name, dryrun)
+           ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\passlib\h
+andlers\bcrypt.py", line 
+421, in 
+_finalize_backend_mixin
+    if 
+detect_wrap_bug(IDENT_2A):
+       
+~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\passlib\h
+andlers\bcrypt.py", line 
+380, in detect_wrap_bug
+    if verify(secret, 
+bug_hash):
+       
+~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\passlib\u
+tils\handlers.py", line 792, 
+in verify
+    return consteq(self._calc
+_checksum(secret), chk)
+                   
+~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\ayesh\AI-Pow
+ered-Insider-Threat-Detection
+-and-Behavioral-Security-Inte
+lligence-Platform\backend\ven
+v\Lib\site-packages\passlib\h
+andlers\bcrypt.py", line 
+655, in _calc_checksum
+    hash = 
+_bcrypt.hashpw(secret, 
+config)
+ValueError: password cannot 
+be longer than 72 bytes, 
+truncate manually if 
+necessary (e.g. 
+my_password[:72])

@@ -1,0 +1,35 @@
+.\venv\Scripts\uvicorn.exe : 
+INFO:     Started server 
+process [4812]
+At line:1 char:1
++ .\venv\Scripts\uvicorn.exe 
+app.main:app > uvicorn.log 
+2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo           
+   : NotSpecified: (INFO:    
+     Started server proces   
+ s [4812]:String) [], Rem    
+oteException
+    + FullyQualifiedErrorId  
+   : NativeCommandError
+ 
+INFO:     Waiting for 
+application startup.
+INFO:     Application 
+startup complete.
+ERROR:    [Errno 10048] 
+error while attempting to 
+bind on address 
+('127.0.0.1', 8000): 
+[winerror 10048] only one 
+usage of each socket address 
+(protocol/network 
+address/port) is normally 
+permitted
+INFO:     Waiting for 
+application shutdown.
+INFO:     Application 
+shutdown complete.
