@@ -1,5 +1,10 @@
-.venv/
+venv/
 __pycache__/
 *.pyc
-.DS_Store
 .env
+backend/itbis.db
+
+backend/venv/
+backend/*.db
+__pycache__/
+*.pyc

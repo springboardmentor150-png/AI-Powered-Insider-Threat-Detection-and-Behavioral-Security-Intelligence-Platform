@@ -1,0 +1,3 @@
+ "use client";
+import {useEffect,useState} from "react"; import {useParams} from "next/navigation"; import Shell from "../../../components/Shell"; import {getJSON} from "../../../lib/api";
+export default function IncidentDetail(){const p=useParams();const [d,setD]=useState(null);useEffect(()=>{if(p?.id)getJSON(`/investigation/incidents/${p.id}/timeline`).then(setD)},[p]);return <Shell title={`Incident #${p?.id}`}><div className="card">{d?.timeline?.map((x,i)=><div key={i} style={{padding:"14px 0",borderBottom:"1px solid #eee"}}><b>{x.timestamp}</b> · <span className={`badge ${x.type==="anomaly"?"high":"low"}`}>{x.type}</span> · {x.detail}</div>)}</div></Shell>}
