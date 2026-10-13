@@ -1,8 +1,0 @@
-__pycache__/
-*.pyc
-venv/
-.venv/
-.env
-.next/
-node_modules/
-*.pkl
