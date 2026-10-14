@@ -22,7 +22,7 @@ type Activity = {
   event_type: string;
   source: string;
   ip_address?: string | null;
-  risk_score: number;
+  risk_score?: number | null;
   timestamp: string;
 };
 
@@ -121,6 +121,13 @@ export default function ActivityPage() {
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const empParam = params.get("employee");
+      if (empParam) {
+        setSelectedEmployee(empParam);
+      }
+    }
     loadEmployees();
   }, []);
 
@@ -133,12 +140,13 @@ export default function ActivityPage() {
       employee.employee_code === selectedEmployee
   );
 
-  const getRiskLabel = (score: number) => {
-    if (score >= 70) {
+  const getRiskLabel = (score?: number | null) => {
+    const numericScore = Number(score) || 0;
+    if (numericScore >= 70) {
       return "High";
     }
 
-    if (score >= 40) {
+    if (numericScore >= 40) {
       return "Medium";
     }
 
@@ -150,13 +158,13 @@ export default function ActivityPage() {
   };
 
   return (
-    <main className="flex min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+    <div className="flex h-screen bg-[var(--background)] text-[var(--foreground)]">
       <Sidebar />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Navbar />
 
-        <section className="flex-1 p-6">
+        <main className="flex-1 overflow-y-auto p-6 md:p-8">
           {/* Page Header */}
           <div className="mb-8">
             <p className="text-sm text-[var(--accent)]">
@@ -280,7 +288,7 @@ export default function ActivityPage() {
                     ? "—"
                     : activities.filter(
                         (activity) =>
-                          activity.risk_score >= 70
+                          (Number(activity.risk_score) || 0) >= 70
                       ).length}
                 </p>
 
@@ -295,17 +303,17 @@ export default function ActivityPage() {
                 </p>
 
                 <p className="mt-3 text-3xl font-bold">
-                  {loadingActivities ||
-                  activities.length === 0
+                  {loadingActivities || activities.length === 0
                     ? "—"
-                    : Math.round(
-                        activities.reduce(
+                    : (() => {
+                        const sum = activities.reduce(
                           (total, activity) =>
-                            total +
-                            activity.risk_score,
+                            total + (Number(activity.risk_score) || 0),
                           0
-                        ) / activities.length
-                      )}
+                        );
+                        const avg = Math.round(sum / activities.length);
+                        return isNaN(avg) ? "—" : avg;
+                      })()}
                 </p>
 
                 <p className="mt-2 text-xs text-[var(--muted)]">
@@ -415,17 +423,16 @@ export default function ActivityPage() {
                             <div className="flex items-center gap-2">
                               <span
                                 className={`h-2 w-2 rounded-full ${
-                                  activity.risk_score >= 70
+                                  (Number(activity.risk_score) || 0) >= 70
                                     ? "bg-[var(--danger)]"
-                                    : activity.risk_score >=
-                                      40
+                                    : (Number(activity.risk_score) || 0) >= 40
                                     ? "bg-[var(--warning)]"
                                     : "bg-[var(--success)]"
                                 }`}
                               />
 
                               <span className="text-sm font-medium">
-                                {activity.risk_score}
+                                {activity.risk_score != null ? activity.risk_score : 0}
                               </span>
 
                               <span className="text-xs text-[var(--muted)]">
@@ -447,8 +454,8 @@ export default function ActivityPage() {
               </div>
             )}
           </div>
-        </section>
+        </main>
       </div>
-    </main>
+    </div>
   );
 }

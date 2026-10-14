@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
@@ -234,13 +235,13 @@ export default function EmployeesPage() {
   };
 
   return (
-    <main className="flex min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+    <div className="flex h-screen bg-[var(--background)] text-[var(--foreground)]">
       <Sidebar />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Navbar />
 
-        <section className="flex-1 p-6">
+        <main className="flex-1 overflow-y-auto p-6 md:p-8">
           {/* Page Header */}
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -657,6 +658,13 @@ export default function EmployeesPage() {
 
                         <td className="px-6 py-4">
                           <div className="flex justify-end gap-2">
+                            <Link
+                              href={`/employees/${employee.employee_code}`}
+                              className="rounded-lg bg-[var(--primary)] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[var(--primary-hover)] flex items-center gap-1"
+                            >
+                              Dossier 🔍
+                            </Link>
+
                             <button
                               type="button"
                               onClick={() =>
@@ -685,8 +693,8 @@ export default function EmployeesPage() {
               </div>
             )}
           </div>
-        </section>
+        </main>
       </div>
-    </main>
+    </div>
   );
 }

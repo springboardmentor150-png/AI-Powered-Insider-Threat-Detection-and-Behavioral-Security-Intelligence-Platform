@@ -41,3 +41,43 @@ class EmployeeUpdate(BaseModel):
 class EmployeeResponse(EmployeeCreate):
     id: int
     created_at: datetime
+
+
+class IncidentCreate(BaseModel):
+    employee_code: str = Field(min_length=1, max_length=50)
+    incident_type: str = Field(min_length=1, max_length=100)
+    description: str | None = Field(default=None, max_length=5000)
+
+
+class InvestigationNoteCreate(BaseModel):
+    note: str = Field(min_length=1, max_length=10000)
+    evidence_reference: str | None = Field(
+        default=None,
+        max_length=500,
+    )
+
+
+class IncidentResolve(BaseModel):
+    resolution_summary: str = Field(
+        min_length=1,
+        max_length=5000,
+    )
+
+
+class AnomalyFeedbackCreate(BaseModel):
+    feedback: str = Field(min_length=1, max_length=50)  # "false_positive", "confirmed", "benign"
+    notes: str | None = Field(default=None, max_length=5000)
+
+
+class UserRoleUpdate(BaseModel):
+    role: str = Field(min_length=1, max_length=50)
+
+
+class UserStatusUpdate(BaseModel):
+    is_active: bool
+
+
+class IncidentStatusUpdate(BaseModel):
+    status: str = Field(min_length=1, max_length=50)
+    summary: str | None = Field(default=None, max_length=5000)
+

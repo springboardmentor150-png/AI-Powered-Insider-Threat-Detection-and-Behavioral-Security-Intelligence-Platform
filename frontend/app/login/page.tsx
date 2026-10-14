@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 import api from "@/lib/api";
 
@@ -156,6 +157,17 @@ export default function LoginPage() {
                 {loading ? "Signing in..." : "Sign in"}
               </button>
             </form>
+
+            {/* Link to signup */}
+            <div className="mt-5 text-center text-xs text-[var(--muted)]">
+              Don&apos;t have an account?{" "}
+              <Link
+                href="/signup"
+                className="font-semibold text-[var(--primary)] hover:underline"
+              >
+                Sign up
+              </Link>
+            </div>
 
             {/* Security indicator */}
             <div className="mt-6 flex items-center justify-center gap-2 text-xs text-[var(--muted)]">
