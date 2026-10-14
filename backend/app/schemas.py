@@ -57,6 +57,7 @@ class EmployeeUpdate(BaseModel):
     device_info: Optional[str] = None
     access_privileges: Optional[str] = None
 
+
 class EmployeeResponse(BaseModel):
     id: int
     employee_id: str
@@ -77,14 +78,13 @@ class DirectReportsResponse(BaseModel):
 
 
 # ---------- Incidents & Alerts ----------
-# These tables are defined in the Day 2 schema; the guides don't provide their
-# CRUD endpoints yet (that lands in later milestones), but a minimal create/read
-# shape is included here so /alerts/my and /reports/risk-posture are testable.
+# Day 25 - Threat Investigation Module
 
 class IncidentCreate(BaseModel):
     employee_id: int
     status: str = "open"
     severity: str  # informational | low | medium | high | critical
+    summary: Optional[str] = None
 
 
 class IncidentResponse(BaseModel):
@@ -92,10 +92,20 @@ class IncidentResponse(BaseModel):
     employee_id: int
     status: str
     severity: str
+    summary: Optional[str] = None
     created_at: datetime
+    resolved_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+
+
+class InvestigationNoteCreate(BaseModel):
+    note: str
+    evidence_reference: Optional[str] = None
+
+class IncidentResolveRequest(BaseModel):
+    resolution_summary: str
 
 
 class AlertCreate(BaseModel):
@@ -122,3 +132,21 @@ class RiskPostureResponse(BaseModel):
     open_incidents: int
     incidents_by_severity: dict
     alerts_by_severity: dict
+
+
+# ---------- Activity Logs ----------
+# Milestone 2 - Day 10
+
+class ActivityLogCreate(BaseModel):
+    employee_id: str
+    event_type: str
+    timestamp: datetime
+    details: dict = Field(default_factory=dict)
+
+
+class ActivityLogResponse(BaseModel):
+    id: str
+    employee_id: str
+    event_type: str
+    timestamp: datetime
+    details: dict

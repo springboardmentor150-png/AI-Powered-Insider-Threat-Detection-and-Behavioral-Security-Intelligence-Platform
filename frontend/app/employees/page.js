@@ -1,1835 +1,1727 @@
-// "use client";
-
-// import { useEffect, useMemo, useState } from "react";
-// import api, {
-//   clearSession,
-//   getStoredRole,
-//   isLoggedIn,
-// } from "@/lib/api";
-
-// const EDIT_ROLES = ["admin", "security_manager"];
-
-// const EMPTY_FORM = {
-//   employee_id: "",
-//   name: "",
-//   department: "",
-//   designation: "",
-//   manager_id: "",
-//   device_info: "",
-//   access_privileges: "",
-// };
-
-// export default function EmployeesPage() {
-//   const [employees, setEmployees] = useState([]);
-//   const [role, setRole] = useState(null);
-
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState("");
-//   const [message, setMessage] = useState("");
-
-//   const [search, setSearch] = useState("");
-//   const [department, setDepartment] = useState("All");
-
-//   const [selectedEmployee, setSelectedEmployee] = useState(null);
-//   const [directReports, setDirectReports] = useState([]);
-//   const [reportsLoading, setReportsLoading] = useState(false);
-
-//   const [showAddModal, setShowAddModal] = useState(false);
-//   const [showEditModal, setShowEditModal] = useState(false);
-
-//   const [form, setForm] = useState(EMPTY_FORM);
-//   const [formLoading, setFormLoading] = useState(false);
-
-//   const canManageEmployees = EDIT_ROLES.includes(role);
-
-//   useEffect(() => {
-//     if (!isLoggedIn()) {
-//       setError("You're not logged in. Please go to /login first.");
-//       setLoading(false);
-//       return;
-//     }
-
-//     setRole(getStoredRole());
-//     loadEmployees();
-//   }, []);
-
-//   async function loadEmployees() {
-//     try {
-//       setLoading(true);
-//       setError("");
-
-//       const res = await api.get("/employees");
-//       setEmployees(res.data || []);
-//     } catch (err) {
-//       const detail =
-//         err?.response?.data?.detail ||
-//         "Failed to load employees.";
-
-//       setError(
-//         Array.isArray(detail)
-//           ? detail.map((item) => item.msg).join(", ")
-//           : detail
-//       );
-//     } finally {
-//       setLoading(false);
-//     }
-//   }
-
-//   const departments = useMemo(() => {
-//     const values = employees
-//       .map((employee) => employee.department)
-//       .filter(Boolean);
-
-//     return ["All", ...new Set(values)];
-//   }, [employees]);
-
-//   const filteredEmployees = useMemo(() => {
-//     const query = search.trim().toLowerCase();
-
-//     return employees.filter((employee) => {
-//       const matchesSearch =
-//         !query ||
-//         employee.employee_id?.toLowerCase().includes(query) ||
-//         employee.name?.toLowerCase().includes(query) ||
-//         employee.department?.toLowerCase().includes(query) ||
-//         employee.designation?.toLowerCase().includes(query);
-
-//       const matchesDepartment =
-//         department === "All" ||
-//         employee.department === department;
-
-//       return matchesSearch && matchesDepartment;
-//     });
-//   }, [employees, search, department]);
-
-//   function updateForm(field, value) {
-//     setForm((current) => ({
-//       ...current,
-//       [field]: value,
-//     }));
-
-//     setError("");
-//     setMessage("");
-//   }
-
-//   /*
-//    * View employee profile and load direct reports.
-//    *
-//    * IMPORTANT:
-//    * Backend route expects employee_id such as EMP1001,
-//    * not the database numeric id.
-//    */
-//   async function viewEmployee(employee) {
-//     try {
-//       setError("");
-//       setMessage("");
-
-//       setSelectedEmployee(employee);
-//       setDirectReports([]);
-//       setReportsLoading(true);
-
-//       const reportsResponse = await api.get(
-//         `/employees/${employee.employee_id}/reports`
-//       );
-
-//       setDirectReports(reportsResponse.data || []);
-//     } catch (err) {
-//       setDirectReports([]);
-
-//       const detail =
-//         err?.response?.data?.detail ||
-//         "Unable to load direct reports.";
-
-//       setError(
-//         Array.isArray(detail)
-//           ? detail.map((item) => item.msg).join(", ")
-//           : detail
-//       );
-//     } finally {
-//       setReportsLoading(false);
-//     }
-//   }
-
-//   function openAddModal() {
-//     setForm(EMPTY_FORM);
-//     setError("");
-//     setMessage("");
-//     setShowAddModal(true);
-//   }
-
-//   function openEditModal(employee) {
-//     setForm({
-//       employee_id: employee.employee_id || "",
-//       name: employee.name || "",
-//       department: employee.department || "",
-//       designation: employee.designation || "",
-//       manager_id:
-//         employee.manager_id === null ||
-//         employee.manager_id === undefined
-//           ? ""
-//           : String(employee.manager_id),
-//       device_info: employee.device_info || "",
-//       access_privileges: employee.access_privileges || "",
-//     });
-
-//     setSelectedEmployee(employee);
-//     setError("");
-//     setMessage("");
-//     setShowEditModal(true);
-//   }
-
-//   async function addEmployee(event) {
-//     event.preventDefault();
-
-//     try {
-//       setFormLoading(true);
-//       setError("");
-//       setMessage("");
-
-//       const payload = {
-//         employee_id: form.employee_id.trim(),
-//         name: form.name.trim(),
-//         department: form.department.trim(),
-//         designation: form.designation.trim(),
-//         manager_id: form.manager_id
-//           ? Number(form.manager_id)
-//           : null,
-//         device_info: form.device_info.trim(),
-//         access_privileges: form.access_privileges.trim(),
-//       };
-
-//       await api.post("/employees", payload);
-
-//       setMessage("Employee added successfully.");
-//       setShowAddModal(false);
-//       setForm(EMPTY_FORM);
-
-//       await loadEmployees();
-//     } catch (err) {
-//       const detail =
-//         err?.response?.data?.detail ||
-//         "Failed to add employee.";
-
-//       setError(
-//         Array.isArray(detail)
-//           ? detail.map((item) => item.msg).join(", ")
-//           : detail
-//       );
-//     } finally {
-//       setFormLoading(false);
-//     }
-//   }
-
-//   async function updateEmployee(event) {
-//     event.preventDefault();
-
-//     if (!selectedEmployee) {
-//       setError("No employee selected.");
-//       return;
-//     }
-
-//     try {
-//       setFormLoading(true);
-//       setError("");
-//       setMessage("");
-
-//       const payload = {
-//         name: form.name.trim(),
-//         department: form.department.trim(),
-//         designation: form.designation.trim(),
-//         manager_id: form.manager_id
-//           ? Number(form.manager_id)
-//           : null,
-//         device_info: form.device_info.trim(),
-//         access_privileges: form.access_privileges.trim(),
-//       };
-
-//       /*
-//        * IMPORTANT:
-//        * Use employee.employee_id (EMP1001),
-//        * NOT employee.id (1, 2, 3...).
-//        */
-//       await api.patch(
-//         `/employees/${selectedEmployee.employee_id}`,
-//         payload
-//       );
-
-//       setMessage("Employee updated successfully.");
-//       setShowEditModal(false);
-
-//       await loadEmployees();
-//     } catch (err) {
-//       const detail =
-//         err?.response?.data?.detail ||
-//         "Failed to update employee.";
-
-//       setError(
-//         Array.isArray(detail)
-//           ? detail.map((item) => item.msg).join(", ")
-//           : detail
-//       );
-//     } finally {
-//       setFormLoading(false);
-//     }
-//   }
-
-//   function closeViewModal() {
-//     setSelectedEmployee(null);
-//     setDirectReports([]);
-//     setError("");
-//   }
-
-//   function closeEditModal() {
-//     setShowEditModal(false);
-//     setError("");
-//   }
-
-//   function closeAddModal() {
-//     setShowAddModal(false);
-//     setForm(EMPTY_FORM);
-//     setError("");
-//   }
-
-//   function logout() {
-//     clearSession();
-//     window.location.href = "/login";
-//   }
-
-//   if (loading) {
-//     return (
-//       <div className="max-w-6xl">
-//         <p className="text-slate-600">
-//           Loading employees...
-//         </p>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="max-w-6xl">
-
-//       {/* Header */}
-//       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-//         <div>
-//           <h1 className="text-2xl font-semibold text-slate-900">
-//             Employees
-//           </h1>
-
-//           <p className="text-sm text-slate-500 mt-1">
-//             Manage employee identities, reporting relationships and
-//             access information.
-//           </p>
-//         </div>
-
-//         {role && (
-//           <div className="flex items-center gap-3 text-sm">
-//             <span className="text-slate-500">
-//               Signed in as:
-//             </span>
-
-//             <span className="font-medium text-slate-800">
-//               {role}
-//             </span>
-
-//             <button
-//               onClick={logout}
-//               className="text-blue-600 hover:underline"
-//             >
-//               Log out
-//             </button>
-//           </div>
-//         )}
-//       </div>
-
-//       {/* Error Message */}
-//       {error && (
-//         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-//           <p className="text-sm text-red-600">
-//             {error}
-//           </p>
-//         </div>
-//       )}
-
-//       {/* Success Message */}
-//       {message && (
-//         <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-//           <p className="text-sm text-green-600">
-//             {message}
-//           </p>
-//         </div>
-//       )}
-
-//       {/* Statistics */}
-//       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-
-//         <div className="bg-white border rounded-xl p-4 shadow-sm">
-//           <p className="text-sm text-slate-500">
-//             Total Employees
-//           </p>
-
-//           <p className="text-2xl font-semibold text-slate-900 mt-1">
-//             {employees.length}
-//           </p>
-//         </div>
-
-//         <div className="bg-white border rounded-xl p-4 shadow-sm">
-//           <p className="text-sm text-slate-500">
-//             Departments
-//           </p>
-
-//           <p className="text-2xl font-semibold text-slate-900 mt-1">
-//             {departments.length - 1}
-//           </p>
-//         </div>
-
-//         <div className="bg-white border rounded-xl p-4 shadow-sm">
-//           <p className="text-sm text-slate-500">
-//             Visible Results
-//           </p>
-
-//           <p className="text-2xl font-semibold text-slate-900 mt-1">
-//             {filteredEmployees.length}
-//           </p>
-//         </div>
-
-//       </div>
-
-//       {/* Search / Filter / Add */}
-//       <div className="bg-white border rounded-xl p-4 shadow-sm mb-5">
-
-//         <div className="flex flex-col md:flex-row gap-3">
-
-//           <input
-//             type="text"
-//             placeholder="Search by ID, name, department or designation..."
-//             value={search}
-//             onChange={(e) => setSearch(e.target.value)}
-//             className="border rounded-lg px-3 py-2 w-full outline-none focus:ring-2 focus:ring-slate-200"
-//           />
-
-//           <select
-//             value={department}
-//             onChange={(e) => setDepartment(e.target.value)}
-//             className="border rounded-lg px-3 py-2 md:w-56 bg-white"
-//           >
-//             {departments.map((item) => (
-//               <option key={item} value={item}>
-//                 {item === "All"
-//                   ? "All Departments"
-//                   : item}
-//               </option>
-//             ))}
-//           </select>
-
-//           {canManageEmployees && (
-//             <button
-//               onClick={openAddModal}
-//               className="bg-slate-800 hover:bg-slate-900 text-white rounded-lg px-5 py-2 font-medium whitespace-nowrap"
-//             >
-//               + Add Employee
-//             </button>
-//           )}
-
-//         </div>
-
-//       </div>
-
-//       {/* Employee Table */}
-//       <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
-
-//         <div className="overflow-x-auto">
-
-//           <table className="w-full border-collapse">
-
-//             <thead>
-//               <tr className="bg-slate-100 text-left text-sm">
-
-//                 <th className="p-3 font-semibold">
-//                   Employee ID
-//                 </th>
-
-//                 <th className="p-3 font-semibold">
-//                   Name
-//                 </th>
-
-//                 <th className="p-3 font-semibold">
-//                   Department
-//                 </th>
-
-//                 <th className="p-3 font-semibold">
-//                   Designation
-//                 </th>
-
-//                 <th className="p-3 font-semibold">
-//                   Manager ID
-//                 </th>
-
-//                 <th className="p-3 font-semibold text-right">
-//                   Actions
-//                 </th>
-
-//               </tr>
-//             </thead>
-
-//             <tbody>
-
-//               {filteredEmployees.map((emp) => (
-//                 <tr
-//                   key={emp.id}
-//                   className="border-t hover:bg-slate-50"
-//                 >
-
-//                   <td className="p-3 text-sm font-medium">
-//                     {emp.employee_id}
-//                   </td>
-
-//                   <td className="p-3 text-sm">
-//                     {emp.name}
-//                   </td>
-
-//                   <td className="p-3 text-sm">
-//                     {emp.department}
-//                   </td>
-
-//                   <td className="p-3 text-sm">
-//                     {emp.designation}
-//                   </td>
-
-//                   <td className="p-3 text-sm">
-//                     {emp.manager_id ?? "—"}
-//                   </td>
-
-//                   <td className="p-3">
-
-//                     <div className="flex justify-end gap-2">
-
-//                       <button
-//                         onClick={() => viewEmployee(emp)}
-//                         className="border rounded-md px-3 py-1.5 text-sm hover:bg-slate-100"
-//                       >
-//                         View
-//                       </button>
-
-//                       {canManageEmployees && (
-//                         <button
-//                           onClick={() => openEditModal(emp)}
-//                           className="bg-slate-800 text-white rounded-md px-3 py-1.5 text-sm hover:bg-slate-900"
-//                         >
-//                           Edit
-//                         </button>
-//                       )}
-
-//                     </div>
-
-//                   </td>
-
-//                 </tr>
-//               ))}
-
-//               {filteredEmployees.length === 0 && (
-//                 <tr>
-//                   <td
-//                     colSpan="6"
-//                     className="p-8 text-center text-slate-500"
-//                   >
-//                     No employees found.
-//                   </td>
-//                 </tr>
-//               )}
-
-//             </tbody>
-
-//           </table>
-
-//         </div>
-
-//       </div>
-
-//       {/* View Employee Modal */}
-//       {selectedEmployee && !showEditModal && (
-//         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-
-//           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-
-//             <div className="p-5 border-b flex justify-between items-center">
-
-//               <div>
-//                 <h2 className="text-xl font-semibold">
-//                   Employee Profile
-//                 </h2>
-
-//                 <p className="text-sm text-slate-500 mt-1">
-//                   {selectedEmployee.employee_id}
-//                 </p>
-//               </div>
-
-//               <button
-//                 onClick={closeViewModal}
-//                 className="text-slate-500 hover:text-slate-900 text-xl"
-//               >
-//                 ×
-//               </button>
-
-//             </div>
-
-//             <div className="p-5 space-y-4">
-
-//               <Info
-//                 label="Name"
-//                 value={selectedEmployee.name}
-//               />
-
-//               <Info
-//                 label="Department"
-//                 value={selectedEmployee.department}
-//               />
-
-//               <Info
-//                 label="Designation"
-//                 value={selectedEmployee.designation}
-//               />
-
-//               <Info
-//                 label="Manager ID"
-//                 value={selectedEmployee.manager_id ?? "—"}
-//               />
-
-//               <Info
-//                 label="Device Info"
-//                 value={selectedEmployee.device_info || "—"}
-//               />
-
-//               <Info
-//                 label="Access Privileges"
-//                 value={selectedEmployee.access_privileges || "—"}
-//               />
-
-//               {/* Direct Reports */}
-//               <div className="pt-3 border-t">
-
-//                 <h3 className="font-semibold text-slate-900 mb-2">
-//                   Direct Reports
-//                 </h3>
-
-//                 {reportsLoading ? (
-//                   <p className="text-sm text-slate-500">
-//                     Loading direct reports...
-//                   </p>
-//                 ) : directReports.length === 0 ? (
-//                   <p className="text-sm text-slate-500">
-//                     No direct reports.
-//                   </p>
-//                 ) : (
-//                   <div className="space-y-2">
-
-//                     {directReports.map((report) => (
-//                       <div
-//                         key={report.id}
-//                         className="border rounded-lg p-3"
-//                       >
-
-//                         <p className="font-medium text-sm">
-//                           {report.name}
-//                         </p>
-
-//                         <p className="text-xs text-slate-500">
-//                           {report.employee_id} •{" "}
-//                           {report.designation}
-//                         </p>
-
-//                       </div>
-//                     ))}
-
-//                   </div>
-//                 )}
-
-//               </div>
-
-//               {canManageEmployees && (
-//                 <button
-//                   onClick={() => openEditModal(selectedEmployee)}
-//                   className="w-full bg-slate-800 hover:bg-slate-900 text-white rounded-lg py-2.5 font-medium"
-//                 >
-//                   Edit Profile
-//                 </button>
-//               )}
-
-//             </div>
-
-//           </div>
-
-//         </div>
-//       )}
-
-//       {/* Add Employee Modal */}
-//       {showAddModal && (
-//         <EmployeeForm
-//           title="Add Employee"
-//           form={form}
-//           updateForm={updateForm}
-//           loading={formLoading}
-//           onSubmit={addEmployee}
-//           onClose={closeAddModal}
-//         />
-//       )}
-
-//       {/* Edit Employee Modal */}
-//       {showEditModal && selectedEmployee && (
-//         <EmployeeForm
-//           title="Edit Employee"
-//           form={form}
-//           updateForm={updateForm}
-//           loading={formLoading}
-//           onSubmit={updateEmployee}
-//           onClose={closeEditModal}
-//           editing
-//         />
-//       )}
-
-//     </div>
-//   );
-// }
-
-
-// /* ---------------------------------------------
-//    Information Display
-// --------------------------------------------- */
-
-// function Info({ label, value }) {
-//   return (
-//     <div>
-
-//       <p className="text-xs uppercase tracking-wide text-slate-500">
-//         {label}
-//       </p>
-
-//       <p className="text-sm text-slate-900 mt-1">
-//         {value}
-//       </p>
-
-//     </div>
-//   );
-// }
-
-
-// /* ---------------------------------------------
-//    Employee Add/Edit Form
-// --------------------------------------------- */
-
-// function EmployeeForm({
-//   title,
-//   form,
-//   updateForm,
-//   loading,
-//   onSubmit,
-//   onClose,
-//   editing = false,
-// }) {
-//   return (
-//     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-
-//       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-
-//         {/* Modal Header */}
-//         <div className="p-5 border-b flex justify-between items-center">
-
-//           <div>
-
-//             <h2 className="text-xl font-semibold">
-//               {title}
-//             </h2>
-
-//             <p className="text-sm text-slate-500 mt-1">
-//               {editing
-//                 ? "Update employee profile information."
-//                 : "Create a new employee profile."}
-//             </p>
-
-//           </div>
-
-//           <button
-//             type="button"
-//             onClick={onClose}
-//             className="text-slate-500 hover:text-slate-900 text-xl"
-//           >
-//             ×
-//           </button>
-
-//         </div>
-
-//         {/* Form */}
-//         <form
-//           onSubmit={onSubmit}
-//           className="p-5 space-y-4"
-//         >
-
-//           {/* Employee ID */}
-//           <Field
-//             label="Employee ID"
-//             value={form.employee_id}
-//             disabled={editing}
-//             onChange={(value) =>
-//               updateForm("employee_id", value)
-//             }
-//             placeholder="EMP1007"
-//           />
-
-//           {/* Name */}
-//           <Field
-//             label="Name"
-//             value={form.name}
-//             onChange={(value) =>
-//               updateForm("name", value)
-//             }
-//             placeholder="Employee name"
-//           />
-
-//           {/* Department */}
-//           <Field
-//             label="Department"
-//             value={form.department}
-//             onChange={(value) =>
-//               updateForm("department", value)
-//             }
-//             placeholder="Finance"
-//           />
-
-//           {/* Designation */}
-//           <Field
-//             label="Designation"
-//             value={form.designation}
-//             onChange={(value) =>
-//               updateForm("designation", value)
-//             }
-//             placeholder="Financial Analyst"
-//           />
-
-//           {/* Manager ID */}
-//           <Field
-//             label="Manager ID"
-//             value={form.manager_id}
-//             onChange={(value) =>
-//               updateForm("manager_id", value)
-//             }
-//             placeholder="1"
-//             type="number"
-//           />
-
-//           {/* Device Info */}
-//           <Field
-//             label="Device Info"
-//             value={form.device_info}
-//             onChange={(value) =>
-//               updateForm("device_info", value)
-//             }
-//             placeholder="Laptop / workstation information"
-//           />
-
-//           {/* Access Privileges */}
-//           <Field
-//             label="Access Privileges"
-//             value={form.access_privileges}
-//             onChange={(value) =>
-//               updateForm("access_privileges", value)
-//             }
-//             placeholder="Standard user access"
-//           />
-
-//           {/* Buttons */}
-//           <div className="flex gap-3 pt-2">
-
-//             <button
-//               type="button"
-//               onClick={onClose}
-//               className="flex-1 border rounded-lg py-2.5 hover:bg-slate-50"
-//             >
-//               Cancel
-//             </button>
-
-//             <button
-//               type="submit"
-//               disabled={loading}
-//               className="flex-1 bg-slate-800 hover:bg-slate-900 text-white rounded-lg py-2.5 disabled:opacity-50"
-//             >
-//               {loading
-//                 ? "Saving..."
-//                 : editing
-//                 ? "Save Changes"
-//                 : "Add Employee"}
-//             </button>
-
-//           </div>
-
-//         </form>
-
-//       </div>
-
-//     </div>
-//   );
-// }
-
-
-// /* ---------------------------------------------
-//    Reusable Input Field
-// --------------------------------------------- */
-
-// function Field({
-//   label,
-//   value,
-//   onChange,
-//   placeholder,
-//   type = "text",
-//   disabled = false,
-// }) {
-//   const optionalFields = [
-//     "Manager ID",
-//     "Device Info",
-//     "Access Privileges",
-//   ];
-
-//   return (
-//     <div>
-
-//       <label className="block text-sm font-medium text-slate-700 mb-1">
-//         {label}
-//       </label>
-
-//       <input
-//         type={type}
-//         value={value}
-//         disabled={disabled}
-//         placeholder={placeholder}
-//         onChange={(e) => onChange(e.target.value)}
-//         required={!optionalFields.includes(label)}
-//         className="border rounded-lg px-3 py-2.5 w-full outline-none focus:ring-2 focus:ring-slate-200 disabled:bg-slate-100 disabled:text-slate-500"
-//       />
-
-//     </div>
-//   );
-// }
-
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+import AuthGuard from "@/components/AuthGuard";
+
 import api, {
   clearSession,
   getStoredRole,
   isLoggedIn,
 } from "@/lib/api";
 
-const EDIT_ROLES = ["admin", "security_manager"];
 
-const EMPTY_FORM = {
-  employee_id: "",
-  name: "",
-  department: "",
-  designation: "",
-  manager_id: "",
-  device_info: "",
-  access_privileges: "",
-};
+// =========================================================
+// EMPLOYEE INTELLIGENCE PAGE
+// DAY 20–24
+//
+// Day 20  - Employee intelligence
+// Day 21  - Risk scoring
+// Day 22  - Risk posture
+// Day 23  - UEBA peer comparison
+// Day 24  - Behavioral trend analysis
+// =========================================================
 
 export default function EmployeesPage() {
+  const router = useRouter();
+
+  // =======================================================
+  // STATE
+  // =======================================================
+
   const [employees, setEmployees] = useState([]);
-  const [role, setRole] = useState(null);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [selectedEmployee, setSelectedEmployee] =
+    useState(null);
 
-  const [search, setSearch] = useState("");
-  const [department, setDepartment] = useState("All");
+  const [riskProfile, setRiskProfile] =
+    useState(null);
 
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [directReports, setDirectReports] = useState([]);
-  const [reportsLoading, setReportsLoading] = useState(false);
+  const [riskTrend, setRiskTrend] =
+    useState([]);
 
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [formLoading, setFormLoading] = useState(false);
+  const [riskLoading, setRiskLoading] =
+    useState(false);
 
-  const canManageEmployees = EDIT_ROLES.includes(role);
+  const [refreshing, setRefreshing] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [search, setSearch] =
+    useState("");
+
+  const [departmentFilter, setDepartmentFilter] =
+    useState("All");
+
+  const [role, setRole] =
+    useState("");
+
+  // =======================================================
+  // AUTHENTICATION
+  // =======================================================
 
   useEffect(() => {
     if (!isLoggedIn()) {
-      setError("You're not logged in. Please go to /login first.");
-      setLoading(false);
+      router.replace("/login");
       return;
     }
 
-    setRole(getStoredRole());
+    setRole(getStoredRole() || "user");
+
     loadEmployees();
-  }, []);
+  }, [router]);
+
+  // =======================================================
+  // LOAD EMPLOYEES
+  // =======================================================
 
   async function loadEmployees() {
     try {
       setLoading(true);
       setError("");
 
-      const res = await api.get("/employees");
+      const response =
+        await api.get("/employees");
 
-      const data = Array.isArray(res.data)
-        ? res.data
-        : Array.isArray(res.data?.employees)
-        ? res.data.employees
-        : [];
+      const data = response.data;
 
-      setEmployees(data);
+      let employeeList = [];
+
+      if (Array.isArray(data)) {
+        employeeList = data;
+      } else {
+        employeeList =
+          data?.employees || [];
+      }
+
+      setEmployees(employeeList);
+
+      // Select first employee automatically
+      if (employeeList.length > 0) {
+        const currentEmployee =
+          employeeList.find(
+            (employee) =>
+              employee.employee_id ===
+              selectedEmployee
+          );
+
+        const employeeToSelect =
+          currentEmployee ||
+          employeeList[0];
+
+        setSelectedEmployee(
+          employeeToSelect.employee_id
+        );
+
+        await loadRiskIntelligence(
+          employeeToSelect.employee_id
+        );
+      }
     } catch (err) {
-      const detail =
-        err?.response?.data?.detail ||
-        "Failed to load employees.";
+      console.error(
+        "Employee loading error:",
+        err
+      );
+
+      if (
+        err?.response?.status === 401
+      ) {
+        handleLogout();
+        return;
+      }
 
       setError(
-        Array.isArray(detail)
-          ? detail.map((item) => item.msg).join(", ")
-          : detail
+        err?.response?.data?.detail ||
+          "Unable to load employee data."
       );
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }
 
-  const departments = useMemo(() => {
-    const values = employees
-      .map((employee) => employee.department)
-      .filter(Boolean);
+  // =======================================================
+  // LOAD DAY 21–24 INTELLIGENCE
+  // =======================================================
 
-    return ["All", ...new Set(values)];
-  }, [employees]);
-
-  const filteredEmployees = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    return employees.filter((employee) => {
-      const matchesSearch =
-        !query ||
-        employee.employee_id?.toLowerCase().includes(query) ||
-        employee.name?.toLowerCase().includes(query) ||
-        employee.department?.toLowerCase().includes(query) ||
-        employee.designation?.toLowerCase().includes(query);
-
-      const matchesDepartment =
-        department === "All" ||
-        employee.department === department;
-
-      return matchesSearch && matchesDepartment;
-    });
-  }, [employees, search, department]);
-
-  function updateForm(field, value) {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
-
-    setError("");
-    setMessage("");
-  }
-
-  /*
-   * View employee profile.
-   *
-   * IMPORTANT:
-   * Backend route expects employee_id such as EMP1001,
-   * not the database numeric id.
-   *
-   * The API may return:
-   * - an array
-   * - { direct_reports: [...] }
-   * - { reports: [...] }
-   *
-   * We normalize all supported responses into an array.
-   */
-  async function viewEmployee(employee) {
-    try {
-      setError("");
-      setMessage("");
-
-      setSelectedEmployee(employee);
-      setDirectReports([]);
-      setReportsLoading(true);
-
-      const reportsResponse = await api.get(
-        `/employees/${employee.employee_id}/reports`
-      );
-
-      const reportsData = reportsResponse.data;
-
-      let reports = [];
-
-      if (Array.isArray(reportsData)) {
-        reports = reportsData;
-      } else if (Array.isArray(reportsData?.direct_reports)) {
-        reports = reportsData.direct_reports;
-      } else if (Array.isArray(reportsData?.reports)) {
-        reports = reportsData.reports;
-      }
-
-      setDirectReports(reports);
-    } catch (err) {
-      setDirectReports([]);
-
-      const detail =
-        err?.response?.data?.detail ||
-        "Unable to load direct reports.";
-
-      setError(
-        Array.isArray(detail)
-          ? detail.map((item) => item.msg).join(", ")
-          : detail
-      );
-    } finally {
-      setReportsLoading(false);
-    }
-  }
-
-  function openAddModal() {
-    setForm({ ...EMPTY_FORM });
-    setError("");
-    setMessage("");
-    setShowAddModal(true);
-  }
-
-  function openEditModal(employee) {
-    setForm({
-      employee_id: employee.employee_id || "",
-      name: employee.name || "",
-      department: employee.department || "",
-      designation: employee.designation || "",
-      manager_id:
-        employee.manager_id === null ||
-        employee.manager_id === undefined
-          ? ""
-          : String(employee.manager_id),
-      device_info: employee.device_info || "",
-      access_privileges: employee.access_privileges || "",
-    });
-
-    setSelectedEmployee(employee);
-    setError("");
-    setMessage("");
-    setShowEditModal(true);
-  }
-
-  async function addEmployee(event) {
-    event.preventDefault();
-
-    try {
-      setFormLoading(true);
-      setError("");
-      setMessage("");
-
-      const payload = {
-        employee_id: form.employee_id.trim(),
-        name: form.name.trim(),
-        department: form.department.trim(),
-        designation: form.designation.trim(),
-        manager_id: form.manager_id
-          ? Number(form.manager_id)
-          : null,
-        device_info: form.device_info.trim(),
-        access_privileges: form.access_privileges.trim(),
-      };
-
-      await api.post("/employees", payload);
-
-      setMessage("Employee added successfully.");
-      setShowAddModal(false);
-      setForm({ ...EMPTY_FORM });
-
-      await loadEmployees();
-    } catch (err) {
-      const detail =
-        err?.response?.data?.detail ||
-        "Failed to add employee.";
-
-      setError(
-        Array.isArray(detail)
-          ? detail.map((item) => item.msg).join(", ")
-          : detail
-      );
-    } finally {
-      setFormLoading(false);
-    }
-  }
-
-  async function updateEmployee(event) {
-    event.preventDefault();
-
-    if (!selectedEmployee) {
-      setError("No employee selected.");
+  async function loadRiskIntelligence(
+    employeeId
+  ) {
+    if (!employeeId) {
       return;
     }
 
     try {
-      setFormLoading(true);
-      setError("");
-      setMessage("");
+      setRiskLoading(true);
 
-      const payload = {
-        name: form.name.trim(),
-        department: form.department.trim(),
-        designation: form.designation.trim(),
-        manager_id: form.manager_id
-          ? Number(form.manager_id)
-          : null,
-        device_info: form.device_info.trim(),
-        access_privileges: form.access_privileges.trim(),
-      };
+      const [
+        profileResult,
+        trendResult,
+      ] = await Promise.allSettled([
+        // Day 21–23
+        api.get(
+          `/ueba/profile/${employeeId}`
+        ),
 
-      /*
-       * IMPORTANT:
-       * Use employee.employee_id such as EMP1001,
-       * NOT employee.id such as 1, 2, 3.
-       */
-      await api.patch(
-        `/employees/${selectedEmployee.employee_id}`,
-        payload
-      );
+        // Day 24
+        api.get(
+          `/ueba/trend/${employeeId}?days=30`
+        ),
+      ]);
 
-      setMessage("Employee updated successfully.");
-      setShowEditModal(false);
+      // ===================================================
+      // UEBA PROFILE
+      // ===================================================
 
-      await loadEmployees();
+      if (
+        profileResult.status ===
+        "fulfilled"
+      ) {
+        setRiskProfile(
+          profileResult.value.data
+        );
+      } else {
+        console.error(
+          "UEBA profile error:",
+          profileResult.reason
+        );
+
+        setRiskProfile(null);
+      }
+
+      // ===================================================
+      // 30 DAY TREND
+      // ===================================================
+
+      if (
+        trendResult.status ===
+        "fulfilled"
+      ) {
+        setRiskTrend(
+          trendResult.value.data?.trend ||
+            []
+        );
+      } else {
+        console.error(
+          "UEBA trend error:",
+          trendResult.reason
+        );
+
+        setRiskTrend([]);
+      }
     } catch (err) {
-      const detail =
-        err?.response?.data?.detail ||
-        "Failed to update employee.";
-
-      setError(
-        Array.isArray(detail)
-          ? detail.map((item) => item.msg).join(", ")
-          : detail
+      console.error(
+        "Risk intelligence error:",
+        err
       );
+
+      setRiskProfile(null);
+      setRiskTrend([]);
     } finally {
-      setFormLoading(false);
+      setRiskLoading(false);
     }
   }
 
-  function closeViewModal() {
-    setSelectedEmployee(null);
-    setDirectReports([]);
-    setError("");
-  }
+  // =======================================================
+  // EMPLOYEE SELECTION
+  // =======================================================
 
-  function closeEditModal() {
-    setShowEditModal(false);
-    setError("");
-  }
+  async function handleEmployeeSelect(
+    employeeId
+  ) {
+    setSelectedEmployee(employeeId);
 
-  function closeAddModal() {
-    setShowAddModal(false);
-    setForm({ ...EMPTY_FORM });
-    setError("");
-  }
-
-  function logout() {
-    clearSession();
-    window.location.href = "/login";
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-10 h-10 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin mx-auto mb-4" />
-
-          <p className="text-slate-600">
-            Loading employees...
-          </p>
-        </div>
-      </div>
+    await loadRiskIntelligence(
+      employeeId
     );
   }
 
+  // =======================================================
+  // REFRESH
+  // =======================================================
+
+  async function handleRefresh() {
+    setRefreshing(true);
+
+    await loadEmployees();
+  }
+
+  // =======================================================
+  // LOGOUT
+  // =======================================================
+
+  function handleLogout() {
+    clearSession();
+
+    router.replace("/login");
+  }
+
+  // =======================================================
+  // DEPARTMENTS
+  // =======================================================
+
+  const departments = useMemo(() => {
+    const values =
+      employees
+        .map(
+          (employee) =>
+            employee.department
+        )
+        .filter(Boolean);
+
+    return [
+      "All",
+      ...Array.from(
+        new Set(values)
+      ),
+    ];
+  }, [employees]);
+
+  // =======================================================
+  // FILTER EMPLOYEES
+  // =======================================================
+
+  const filteredEmployees =
+    useMemo(() => {
+      const searchValue =
+        search
+          .trim()
+          .toLowerCase();
+
+      return employees.filter(
+        (employee) => {
+          const matchesSearch =
+            !searchValue ||
+            String(
+              employee.employee_id ||
+                ""
+            )
+              .toLowerCase()
+              .includes(
+                searchValue
+              ) ||
+            String(
+              employee.name || ""
+            )
+              .toLowerCase()
+              .includes(
+                searchValue
+              ) ||
+            String(
+              employee.department ||
+                ""
+            )
+              .toLowerCase()
+              .includes(
+                searchValue
+              ) ||
+            String(
+              employee.designation ||
+                ""
+            )
+              .toLowerCase()
+              .includes(
+                searchValue
+              );
+
+          const matchesDepartment =
+            departmentFilter ===
+              "All" ||
+            employee.department ===
+              departmentFilter;
+
+          return (
+            matchesSearch &&
+            matchesDepartment
+          );
+        }
+      );
+    }, [
+      employees,
+      search,
+      departmentFilter,
+    ]);
+
+  // =======================================================
+  // SELECTED EMPLOYEE OBJECT
+  // =======================================================
+
+  const selectedEmployeeData =
+    employees.find(
+      (employee) =>
+        employee.employee_id ===
+        selectedEmployee
+    );
+
+  // =======================================================
+  // RISK DATA
+  // =======================================================
+
+  const riskScore =
+    Number(
+      riskProfile?.risk_score
+        ?.final_score
+    ) || 0;
+
+  const riskLevel =
+    riskProfile?.risk_score
+      ?.risk_level ||
+    "Low";
+
+  const trendDirection =
+    riskProfile?.trend
+      ?.direction ||
+    "stable";
+
+  const peerComparison =
+    riskProfile?.peer_comparison ||
+    {};
+
+  const subScores =
+    riskProfile?.risk_score
+      ?.sub_scores || {};
+
+  // =======================================================
+  // TREND MAX
+  // =======================================================
+
+  const maxTrendValue =
+    Math.max(
+      ...riskTrend.map(
+        (item) =>
+          Number(
+            item.anomaly_count
+          ) || 0
+      ),
+      1
+    );
+
+  // =======================================================
+  // RISK COUNTS
+  // =======================================================
+
+  const lowRiskEmployees =
+    employees.length;
+
+  // =======================================================
+  // LOADING
+  // =======================================================
+
+  if (loading) {
+    return (
+      <EmployeesSkeleton />
+    );
+  }
+
+  // =======================================================
+  // PAGE
+  // =======================================================
+
   return (
-    <div className="w-full max-w-7xl mx-auto">
+    <AuthGuard>
+      <main className="min-h-screen bg-[#07111f] text-slate-100">
 
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 mb-8">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-slate-900 text-white text-sm font-bold">
-              E
-            </span>
+        {/* =================================================
+            SIDEBAR
+        ================================================= */}
 
-            <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-              Workforce Intelligence
-            </span>
-          </div>
+        <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-white/10 bg-[#091522] lg:flex lg:flex-col">
 
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-            Employees
-          </h1>
+          {/* LOGO */}
 
-          <p className="text-sm text-slate-500 mt-2 max-w-2xl">
-            Manage employee identities, reporting relationships,
-            device information and access privileges.
-          </p>
-        </div>
+          <div className="flex h-20 items-center border-b border-white/10 px-6">
 
-        {role && (
-          <div className="flex items-center gap-3 text-sm bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-green-500" />
+            <div className="flex items-center gap-3">
 
-            <span className="text-slate-500">
-              Signed in as
-            </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 ring-1 ring-blue-400/30">
 
-            <span className="font-semibold text-slate-900">
-              {role}
-            </span>
-
-            <span className="text-slate-300">
-              |
-            </span>
-
-            <button
-              onClick={logout}
-              className="text-blue-600 hover:text-blue-800 font-medium"
-            >
-              Log out
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-3">
-          <span className="text-red-600 font-bold">
-            !
-          </span>
-
-          <p className="text-sm text-red-700">
-            {error}
-          </p>
-        </div>
-      )}
-
-      {/* Success */}
-      {message && (
-        <div className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 flex items-start gap-3">
-          <span className="text-green-600 font-bold">
-            ✓
-          </span>
-
-          <p className="text-sm text-green-700">
-            {message}
-          </p>
-        </div>
-      )}
-
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-
-        <StatCard
-          label="Total Employees"
-          value={employees.length}
-          description="Registered workforce"
-        />
-
-        <StatCard
-          label="Departments"
-          value={departments.length - 1}
-          description="Active departments"
-        />
-
-        <StatCard
-          label="Visible Results"
-          value={filteredEmployees.length}
-          description="Current filtered view"
-        />
-
-      </div>
-
-      {/* Search / Filters */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 mb-6">
-
-        <div className="flex flex-col lg:flex-row gap-3">
-
-          <div className="relative flex-1">
-
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-              ⌕
-            </span>
-
-            <input
-              type="text"
-              placeholder="Search by ID, name, department or designation..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-3 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
-            />
-
-          </div>
-
-          <select
-            value={department}
-            onChange={(e) => setDepartment(e.target.value)}
-            className="border border-slate-200 rounded-xl px-4 py-3 bg-white outline-none focus:border-slate-400 lg:w-56"
-          >
-            {departments.map((item) => (
-              <option key={item} value={item}>
-                {item === "All"
-                  ? "All Departments"
-                  : item}
-              </option>
-            ))}
-          </select>
-
-          {canManageEmployees && (
-            <button
-              onClick={openAddModal}
-              className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl px-6 py-3 font-semibold transition shadow-sm whitespace-nowrap"
-            >
-              + Add Employee
-            </button>
-          )}
-
-        </div>
-
-        <div className="flex items-center justify-between mt-3 px-1">
-
-          <p className="text-xs text-slate-400">
-            Showing {filteredEmployees.length} of{" "}
-            {employees.length} employees
-          </p>
-
-          {(search || department !== "All") && (
-            <button
-              onClick={() => {
-                setSearch("");
-                setDepartment("All");
-              }}
-              className="text-xs text-blue-600 hover:underline"
-            >
-              Clear filters
-            </button>
-          )}
-
-        </div>
-
-      </div>
-
-      {/* Employee Directory */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-
-          <div>
-            <h2 className="font-semibold text-slate-900">
-              Employee Directory
-            </h2>
-
-            <p className="text-xs text-slate-500 mt-1">
-              Employee identity and organizational information
-            </p>
-          </div>
-
-          <span className="text-xs font-medium bg-slate-100 text-slate-600 rounded-full px-3 py-1">
-            {filteredEmployees.length} records
-          </span>
-
-        </div>
-
-        <div className="overflow-x-auto">
-
-          <table className="w-full border-collapse">
-
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-left">
-
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Employee
-                </th>
-
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Department
-                </th>
-
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Designation
-                </th>
-
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Manager
-                </th>
-
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-slate-500 text-right">
-                  Actions
-                </th>
-
-              </tr>
-            </thead>
-
-            <tbody>
-
-              {filteredEmployees.map((emp) => (
-                <tr
-                  key={emp.id ?? emp.employee_id}
-                  className="border-b border-slate-100 last:border-0 hover:bg-slate-50/80 transition"
-                >
-
-                  {/* Employee */}
-                  <td className="px-5 py-4">
-
-                    <div className="flex items-center gap-3">
-
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-semibold">
-                        {getInitials(emp.name)}
-                      </div>
-
-                      <div>
-                        <p className="font-semibold text-slate-900">
-                          {emp.name}
-                        </p>
-
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {emp.employee_id}
-                        </p>
-                      </div>
-
-                    </div>
-
-                  </td>
-
-                  {/* Department */}
-                  <td className="px-5 py-4">
-
-                    <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-xs font-medium">
-                      {emp.department}
-                    </span>
-
-                  </td>
-
-                  {/* Designation */}
-                  <td className="px-5 py-4">
-
-                    <p className="text-sm text-slate-700">
-                      {emp.designation}
-                    </p>
-
-                  </td>
-
-                  {/* Manager */}
-                  <td className="px-5 py-4">
-
-                    <span className="text-sm text-slate-600">
-                      {emp.manager_id ?? "No manager"}
-                    </span>
-
-                  </td>
-
-                  {/* Actions */}
-                  <td className="px-5 py-4">
-
-                    <div className="flex justify-end gap-2">
-
-                      <button
-                        onClick={() => viewEmployee(emp)}
-                        className="border border-slate-200 bg-white text-slate-700 rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-50 hover:border-slate-300 transition"
-                      >
-                        View
-                      </button>
-
-                      {canManageEmployees && (
-                        <button
-                          onClick={() => openEditModal(emp)}
-                          className="bg-slate-900 text-white rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-800 transition"
-                        >
-                          Edit
-                        </button>
-                      )}
-
-                    </div>
-
-                  </td>
-
-                </tr>
-              ))}
-
-              {filteredEmployees.length === 0 && (
-                <tr>
-                  <td
-                    colSpan="5"
-                    className="px-5 py-16 text-center"
-                  >
-
-                    <div className="text-4xl mb-3">
-                      🔍
-                    </div>
-
-                    <p className="font-medium text-slate-700">
-                      No employees found
-                    </p>
-
-                    <p className="text-sm text-slate-500 mt-1">
-                      Try changing your search or department filter.
-                    </p>
-
-                  </td>
-                </tr>
-              )}
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      </div>
-
-      {/* View Employee Modal */}
-      {selectedEmployee && !showEditModal && (
-        <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
-
-            {/* Modal Header */}
-            <div className="p-6 border-b border-slate-200 flex justify-between items-start">
-
-              <div className="flex items-center gap-4">
-
-                <div className="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center font-semibold text-lg">
-                  {getInitials(selectedEmployee.name)}
-                </div>
-
-                <div>
-
-                  <h2 className="text-xl font-semibold text-slate-900">
-                    Employee Profile
-                  </h2>
-
-                  <p className="text-sm text-slate-500 mt-1">
-                    {selectedEmployee.employee_id}
-                  </p>
-
-                </div>
+                <span className="text-lg font-black text-blue-400">
+                  IT
+                </span>
 
               </div>
 
-              <button
-                type="button"
-                onClick={closeViewModal}
-                className="w-9 h-9 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 text-xl"
-              >
-                ×
-              </button>
+              <div>
+
+                <h1 className="text-lg font-black tracking-tight">
+                  ITBIS
+                </h1>
+
+                <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                  Security Intelligence
+                </p>
+
+              </div>
 
             </div>
 
-            {/* Employee Information */}
-            <div className="p-6">
+          </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* NAVIGATION */}
 
-                <Info
-                  label="Name"
-                  value={selectedEmployee.name}
-                />
+          <nav className="flex-1 space-y-1 px-4 py-6">
 
-                <Info
-                  label="Employee ID"
-                  value={selectedEmployee.employee_id}
-                />
+            <NavItem
+              href="/dashboard"
+              label="Security Overview"
+              icon="◈"
+            />
 
-                <Info
-                  label="Department"
-                  value={selectedEmployee.department}
-                />
+            <NavItem
+              href="/employees"
+              label="Employee Intelligence"
+              icon="◎"
+              active
+            />
 
-                <Info
-                  label="Designation"
-                  value={selectedEmployee.designation}
-                />
+            <NavItem
+              href="/anomalies"
+              label="Anomaly Detection"
+              icon="△"
+            />
 
-                <Info
-                  label="Manager ID"
-                  value={
-                    selectedEmployee.manager_id ??
-                    "No manager"
-                  }
-                />
+            <div className="my-5 border-t border-white/10" />
 
-                <Info
-                  label="Device Info"
-                  value={
-                    selectedEmployee.device_info ||
-                    "Not provided"
-                  }
-                />
+            <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">
+              Intelligence
+            </p>
+
+            <NavItem
+              href="/activity"
+              label="Activity Monitoring"
+              icon="◌"
+            />
+
+            <NavItem
+              href="/alerts"
+              label="Security Alerts"
+              icon="!"
+            />
+
+            <NavItem
+              href="/reports"
+              label="Security Reports"
+              icon="▤"
+            />
+
+            <NavItem
+              href="/investigation"
+              label="Threat Investigation"
+              icon="⌕"
+            />
+
+          </nav>
+
+          {/* BOTTOM */}
+
+          <div className="border-t border-white/10 p-4">
+
+            <div className="mb-3 rounded-xl bg-white/[0.03] p-3">
+
+              <p className="text-[10px] uppercase tracking-widest text-slate-600">
+                Current Role
+              </p>
+
+              <p className="mt-1 text-sm font-semibold capitalize text-slate-300">
+                {role || "User"}
+              </p>
+
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-2.5 text-sm font-semibold text-red-400 transition hover:border-red-500/40 hover:bg-red-500/10"
+            >
+              <span>↪</span>
+              Logout
+            </button>
+
+          </div>
+
+        </aside>
+
+        {/* =================================================
+            MAIN
+        ================================================= */}
+
+        <div className="lg:pl-64">
+
+          {/* TOP BAR */}
+
+          <header className="sticky top-0 z-30 border-b border-white/10 bg-[#07111f]/90 backdrop-blur-xl">
+
+            <div className="flex h-20 items-center justify-between px-5 sm:px-8">
+
+              <div>
+
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-blue-400">
+                  Security Intelligence
+                </p>
+
+                <h2 className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">
+                  Employee Intelligence
+                </h2>
 
               </div>
 
-              {/* Access Privileges */}
-              <div className="mt-5">
+              <div className="flex items-center gap-3">
 
-                <Info
-                  label="Access Privileges"
-                  value={
-                    selectedEmployee.access_privileges ||
-                    "Not provided"
-                  }
-                />
+                <button
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.07] disabled:opacity-50"
+                >
+                  {refreshing
+                    ? "Refreshing..."
+                    : "↻ Refresh"}
+                </button>
 
-              </div>
+                <div className="hidden items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-4 py-2.5 sm:flex">
 
-              {/* Direct Reports */}
-              <div className="mt-6 pt-5 border-t border-slate-200">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
 
-                <div className="flex items-center justify-between mb-3">
-
-                  <h3 className="font-semibold text-slate-900">
-                    Direct Reports
-                  </h3>
-
-                  <span className="text-xs bg-slate-100 text-slate-600 rounded-full px-3 py-1">
-                    {directReports.length}
+                  <span className="text-xs font-semibold text-emerald-300">
+                    UEBA ACTIVE
                   </span>
 
                 </div>
 
-                {reportsLoading ? (
-                  <div className="py-5 text-center">
+                <button
+                  onClick={handleLogout}
+                  className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.07]"
+                >
+                  Logout
+                </button>
 
-                    <div className="w-7 h-7 border-3 border-slate-200 border-t-slate-800 rounded-full animate-spin mx-auto mb-3" />
+              </div>
 
-                    <p className="text-sm text-slate-500">
-                      Loading direct reports...
+            </div>
+
+          </header>
+
+          {/* =================================================
+              CONTENT
+          ================================================= */}
+
+          <div className="mx-auto max-w-[1600px] px-5 py-8 sm:px-8">
+
+            {/* ERROR */}
+
+            {error && (
+              <div className="mb-6 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4">
+
+                <div className="flex items-center gap-3">
+
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-400/10 text-amber-400">
+                    !
+                  </span>
+
+                  <div>
+
+                    <p className="text-sm font-semibold text-amber-300">
+                      Employee service warning
+                    </p>
+
+                    <p className="mt-1 text-xs text-slate-400">
+                      {error}
                     </p>
 
                   </div>
-                ) : directReports.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center">
 
-                    <p className="text-sm text-slate-500">
-                      No direct reports.
-                    </p>
+                </div>
 
-                  </div>
-                ) : (
-                  <div className="space-y-2">
+              </div>
+            )}
 
-                    {directReports.map((report) => (
-                      <div
-                        key={
-                          report.id ??
-                          report.employee_id
+            {/* =================================================
+                PAGE HEADER
+            ================================================= */}
+
+            <section className="mb-6">
+
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+
+                <div>
+
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400">
+                    Workforce Intelligence
+                  </p>
+
+                  <h3 className="mt-2 text-3xl font-black tracking-tight">
+                    Employee Risk Intelligence
+                  </h3>
+
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                    Monitor employee behavior, calculate
+                    risk scores, compare employees with
+                    their peers, and analyze behavioral
+                    trends using UEBA.
+                  </p>
+
+                </div>
+
+                <Link
+                  href="/investigation"
+                  className="rounded-xl border border-blue-400/20 bg-blue-400/5 px-4 py-3 text-sm font-semibold text-blue-400 transition hover:bg-blue-400/10"
+                >
+                  Threat Investigation →
+                </Link>
+
+              </div>
+
+            </section>
+
+            {/* =================================================
+                KPI CARDS
+            ================================================= */}
+
+            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+              <KpiCard
+                label="Employees"
+                value={employees.length}
+                description="Registered employee identities"
+                icon="◎"
+              />
+
+              <KpiCard
+                label="Departments"
+                value={departments.length - 1}
+                description="Organizational units"
+                icon="▦"
+                accent="blue"
+              />
+
+              <KpiCard
+                label="Selected Employee"
+                value={
+                  selectedEmployee ||
+                  "N/A"
+                }
+                description="Current intelligence profile"
+                icon="◉"
+                accent="green"
+              />
+
+              <KpiCard
+                label="Current Risk"
+                value={
+                  selectedEmployee
+                    ? riskScore
+                    : "—"
+                }
+                description={
+                  selectedEmployee
+                    ? `${riskLevel} risk`
+                    : "Select an employee"
+                }
+                icon="!"
+                accent={
+                  riskScore >= 50
+                    ? "red"
+                    : riskScore >= 25
+                    ? "yellow"
+                    : "green"
+                }
+              />
+
+            </section>
+
+            {/* =================================================
+                EMPLOYEE DIRECTORY
+            ================================================= */}
+
+            <section className="mt-6 rounded-3xl border border-white/10 bg-[#0b1727] p-6">
+
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
+                <div>
+
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                    Employee Directory
+                  </p>
+
+                  <h3 className="mt-1 text-lg font-bold">
+                    Workforce Records
+                  </h3>
+
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+
+                  <input
+                    value={search}
+                    onChange={(e) =>
+                      setSearch(
+                        e.target.value
+                      )
+                    }
+                    placeholder="Search employee..."
+                    className="w-full rounded-xl border border-white/10 bg-[#07111f] px-4 py-2.5 text-sm text-slate-300 outline-none placeholder:text-slate-600 focus:border-blue-400/40 sm:w-64"
+                  />
+
+                  <select
+                    value={
+                      departmentFilter
+                    }
+                    onChange={(e) =>
+                      setDepartmentFilter(
+                        e.target.value
+                      )
+                    }
+                    className="rounded-xl border border-white/10 bg-[#07111f] px-4 py-2.5 text-sm text-slate-300 outline-none focus:border-blue-400/40"
+                  >
+
+                    {departments.map(
+                      (department) => (
+                        <option
+                          key={
+                            department
+                          }
+                          value={
+                            department
+                          }
+                        >
+                          {department}
+                        </option>
+                      )
+                    )}
+
+                  </select>
+
+                </div>
+
+              </div>
+
+              <div className="mt-6 overflow-x-auto">
+
+                <table className="w-full min-w-[900px]">
+
+                  <thead>
+
+                    <tr className="border-b border-white/10 text-left">
+
+                      <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                        Employee
+                      </th>
+
+                      <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                        Department
+                      </th>
+
+                      <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                        Designation
+                      </th>
+
+                      <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                        Risk Score
+                      </th>
+
+                      <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                        Risk Level
+                      </th>
+
+                      <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                        Action
+                      </th>
+
+                    </tr>
+
+                  </thead>
+
+                  <tbody>
+
+                    {filteredEmployees.length ===
+                    0 ? (
+
+                      <tr>
+
+                        <td
+                          colSpan="6"
+                          className="px-4 py-12 text-center"
+                        >
+
+                          <p className="text-sm text-slate-500">
+                            No employees found.
+                          </p>
+
+                        </td>
+
+                      </tr>
+
+                    ) : (
+
+                      filteredEmployees.map(
+                        (employee) => {
+
+                          const isSelected =
+                            selectedEmployee ===
+                            employee.employee_id;
+
+                          return (
+                            <tr
+                              key={
+                                employee.employee_id
+                              }
+                              className={`border-b border-white/5 transition ${
+                                isSelected
+                                  ? "bg-blue-400/5"
+                                  : "hover:bg-white/[0.02]"
+                              }`}
+                            >
+
+                              <td className="px-4 py-4">
+
+                                <button
+                                  onClick={() =>
+                                    handleEmployeeSelect(
+                                      employee.employee_id
+                                    )
+                                  }
+                                  className="flex items-center gap-3 text-left"
+                                >
+
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-sm font-bold text-blue-400">
+
+                                    {String(
+                                      employee.name ||
+                                        "?"
+                                    )
+                                      .charAt(0)
+                                      .toUpperCase()}
+
+                                  </div>
+
+                                  <div>
+
+                                    <p className="text-sm font-semibold text-slate-200">
+                                      {
+                                        employee.name
+                                      }
+                                    </p>
+
+                                    <p className="mt-1 text-[10px] text-blue-400">
+                                      {
+                                        employee.employee_id
+                                      }
+                                    </p>
+
+                                  </div>
+
+                                </button>
+
+                              </td>
+
+                              <td className="px-4 py-4">
+
+                                <span className="text-sm text-slate-400">
+                                  {
+                                    employee.department ||
+                                    "N/A"
+                                  }
+                                </span>
+
+                              </td>
+
+                              <td className="px-4 py-4">
+
+                                <span className="text-sm text-slate-400">
+                                  {
+                                    employee.designation ||
+                                    "N/A"
+                                  }
+                                </span>
+
+                              </td>
+
+                              <td className="px-4 py-4">
+
+                                {isSelected &&
+                                riskProfile ? (
+
+                                  <span
+                                    className={`text-lg font-black ${
+                                      riskScore >=
+                                      75
+                                        ? "text-red-400"
+                                        : riskScore >=
+                                          50
+                                        ? "text-orange-400"
+                                        : riskScore >=
+                                          25
+                                        ? "text-amber-400"
+                                        : "text-emerald-400"
+                                    }`}
+                                  >
+                                    {
+                                      riskScore
+                                    }
+                                  </span>
+
+                                ) : (
+
+                                  <span className="text-xs text-slate-600">
+                                    Select
+                                  </span>
+
+                                )}
+
+                              </td>
+
+                              <td className="px-4 py-4">
+
+                                {isSelected &&
+                                riskProfile ? (
+
+                                  <RiskBadge
+                                    level={
+                                      riskLevel
+                                    }
+                                  />
+
+                                ) : (
+
+                                  <span className="text-xs text-slate-600">
+                                    —
+                                  </span>
+
+                                )}
+
+                              </td>
+
+                              <td className="px-4 py-4">
+
+                                <button
+                                  onClick={() =>
+                                    handleEmployeeSelect(
+                                      employee.employee_id
+                                    )
+                                  }
+                                  className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                                    isSelected
+                                      ? "bg-blue-500/10 text-blue-400"
+                                      : "bg-white/[0.04] text-slate-400 hover:bg-blue-500/10 hover:text-blue-400"
+                                  }`}
+                                >
+                                  {isSelected
+                                    ? "Selected"
+                                    : "View Intelligence"}
+                                </button>
+
+                              </td>
+
+                            </tr>
+                          );
                         }
-                        className="border border-slate-200 rounded-xl p-3 flex items-center gap-3"
-                      >
+                      )
 
-                        <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-700">
-                          {getInitials(report.name)}
-                        </div>
+                    )}
 
-                        <div>
+                  </tbody>
 
-                          <p className="font-medium text-sm text-slate-900">
-                            {report.name}
-                          </p>
+                </table>
 
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            {report.employee_id} •{" "}
-                            {report.designation}
-                          </p>
+              </div>
 
-                        </div>
+            </section>
 
-                      </div>
-                    ))}
+            {/* =================================================
+                SELECTED EMPLOYEE INTELLIGENCE
+            ================================================= */}
 
-                  </div>
+            <section className="mt-6 rounded-3xl border border-white/10 bg-[#0b1727] p-7">
+
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+                <div>
+
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400">
+                    Day 21–24 Intelligence
+                  </p>
+
+                  <h3 className="mt-1 text-xl font-bold">
+                    Risk & UEBA Profile
+                  </h3>
+
+                  {selectedEmployeeData && (
+                    <p className="mt-1 text-xs text-slate-500">
+                      {
+                        selectedEmployeeData.name
+                      }{" "}
+                      ·{" "}
+                      {
+                        selectedEmployeeData.employee_id
+                      }
+                    </p>
+                  )}
+
+                </div>
+
+                {selectedEmployee && (
+                  <Link
+                    href={`/investigation?employee_id=${encodeURIComponent(
+                      selectedEmployee
+                    )}`}
+                    className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs font-semibold text-slate-300 transition hover:bg-white/[0.07]"
+                  >
+                    Open Investigation →
+                  </Link>
                 )}
 
               </div>
 
-              {/* Edit Profile */}
-              {canManageEmployees && (
-                <button
-                  onClick={() =>
-                    openEditModal(selectedEmployee)
-                  }
-                  className="w-full mt-6 bg-slate-900 hover:bg-slate-800 text-white rounded-xl py-3 font-semibold transition"
-                >
-                  Edit Profile
-                </button>
+              {riskLoading ? (
+
+                <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.02] p-10 text-center">
+
+                  <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-blue-400" />
+
+                  <p className="text-sm text-slate-500">
+                    Loading risk intelligence...
+                  </p>
+
+                </div>
+
+              ) : riskProfile ? (
+
+                <div className="mt-7">
+
+                  {/* ==========================================
+                      RISK SUMMARY
+                  =========================================== */}
+
+                  <div className="grid gap-4 md:grid-cols-3">
+
+                    <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
+
+                      <p className="text-[10px] uppercase tracking-widest text-slate-500">
+                        Final Risk Score
+                      </p>
+
+                      <p
+                        className={`mt-2 text-4xl font-black ${
+                          riskScore >= 75
+                            ? "text-red-400"
+                            : riskScore >= 50
+                            ? "text-orange-400"
+                            : riskScore >=
+                              25
+                            ? "text-amber-400"
+                            : "text-emerald-400"
+                        }`}
+                      >
+                        {riskScore}
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-600">
+                        Weighted score out of 100
+                      </p>
+
+                    </div>
+
+                    <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
+
+                      <p className="text-[10px] uppercase tracking-widest text-slate-500">
+                        Risk Level
+                      </p>
+
+                      <div className="mt-4">
+                        <RiskBadge
+                          level={riskLevel}
+                          large
+                        />
+                      </div>
+
+                    </div>
+
+                    <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
+
+                      <p className="text-[10px] uppercase tracking-widest text-slate-500">
+                        Trend Direction
+                      </p>
+
+                      <p
+                        className={`mt-3 text-2xl font-black capitalize ${
+                          String(
+                            trendDirection
+                          ).toLowerCase()
+                            .includes(
+                              "increase"
+                            )
+                            ? "text-red-400"
+                            : String(
+                                trendDirection
+                              )
+                                .toLowerCase()
+                                .includes(
+                                  "decrease"
+                                )
+                            ? "text-emerald-400"
+                            : "text-blue-400"
+                        }`}
+                      >
+                        {trendDirection}
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-600">
+                        Based on behavioral activity
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  {/* ==========================================
+                      RISK FACTORS
+                  =========================================== */}
+
+                  <div className="mt-6">
+
+                    <p className="mb-4 text-xs font-bold uppercase tracking-widest text-slate-500">
+                      Risk Factors
+                    </p>
+
+                    <div className="grid gap-3 md:grid-cols-2">
+
+                      <RiskFactor
+                        label="Behavioral Anomalies"
+                        value={
+                          subScores.behavioral_anomalies ??
+                          0
+                        }
+                      />
+
+                      <RiskFactor
+                        label="Privilege Misuse"
+                        value={
+                          subScores.privilege_misuse ??
+                          0
+                        }
+                      />
+
+                      <RiskFactor
+                        label="Data Access Violations"
+                        value={
+                          subScores.data_access_violations ??
+                          0
+                        }
+                      />
+
+                      <RiskFactor
+                        label="Access Pattern Deviations"
+                        value={
+                          subScores.access_pattern_deviations ??
+                          0
+                        }
+                      />
+
+                      <RiskFactor
+                        label="Historical Events"
+                        value={
+                          subScores.historical_events ??
+                          0
+                        }
+                      />
+
+                    </div>
+
+                  </div>
+
+                  {/* ==========================================
+                      PEER COMPARISON
+                  =========================================== */}
+
+                  <div className="mt-6 rounded-2xl border border-white/5 bg-white/[0.02] p-5">
+
+                    <div className="flex items-center justify-between">
+
+                      <div>
+
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                          UEBA Peer Comparison
+                        </p>
+
+                        <p className="mt-1 text-[10px] text-slate-600">
+                          Compare employee behavior with organizational peers
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                    <div className="mt-5 grid gap-4 sm:grid-cols-4">
+
+                      <PeerMetric
+                        label="Employee Score"
+                        value={
+                          peerComparison.employee_score ??
+                          "N/A"
+                        }
+                      />
+
+                      <PeerMetric
+                        label="Peer Count"
+                        value={
+                          peerComparison.peer_count ??
+                          "N/A"
+                        }
+                      />
+
+                      <PeerMetric
+                        label="Department Average"
+                        value={
+                          peerComparison.department_avg_score ??
+                          "N/A"
+                        }
+                      />
+
+                      <PeerMetric
+                        label="Deviation"
+                        value={
+                          peerComparison.deviation_from_peers ??
+                          "N/A"
+                        }
+                        highlight
+                      />
+
+                    </div>
+
+                  </div>
+
+                  {/* ==========================================
+                      14 DAY TREND SUMMARY
+                  =========================================== */}
+
+                  <div className="mt-4 rounded-2xl border border-white/5 bg-white/[0.02] p-5">
+
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                      14-Day Behavioral Trend
+                    </p>
+
+                    <div className="mt-5 grid gap-4 sm:grid-cols-3">
+
+                      <TrendMetric
+                        label="First Week Average"
+                        value={
+                          riskProfile
+                            .trend
+                            ?.first_week_avg ??
+                          "N/A"
+                        }
+                      />
+
+                      <TrendMetric
+                        label="Second Week Average"
+                        value={
+                          riskProfile
+                            .trend
+                            ?.second_week_avg ??
+                          "N/A"
+                        }
+                      />
+
+                      <TrendMetric
+                        label="Direction"
+                        value={
+                          riskProfile
+                            .trend
+                            ?.direction ??
+                          "Stable"
+                        }
+                        blue
+                      />
+
+                    </div>
+
+                  </div>
+
+                  {/* ==========================================
+                      30 DAY TREND
+                  =========================================== */}
+
+                  <div className="mt-4 rounded-2xl border border-white/5 bg-white/[0.02] p-5">
+
+                    <div className="flex items-center justify-between">
+
+                      <div>
+
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                          30-Day Behavioral Trend
+                        </p>
+
+                        <p className="mt-1 text-[10px] text-slate-600">
+                          Daily anomaly activity for selected employee
+                        </p>
+
+                      </div>
+
+                      <span className="text-xs text-slate-500">
+                        {riskTrend.length} days
+                      </span>
+
+                    </div>
+
+                    {riskTrend.length ===
+                    0 ? (
+
+                      <div className="mt-6 rounded-xl border border-dashed border-white/10 p-8 text-center">
+
+                        <p className="text-xs text-slate-500">
+                          No 30-day trend data available.
+                        </p>
+
+                      </div>
+
+                    ) : (
+
+                      <div className="mt-6">
+
+                        <div className="flex h-44 items-end gap-1 overflow-hidden">
+
+                          {riskTrend.map(
+                            (
+                              item,
+                              index
+                            ) => {
+
+                              const value =
+                                Number(
+                                  item.anomaly_count
+                                ) || 0;
+
+                              const height =
+                                value === 0
+                                  ? 3
+                                  : Math.max(
+                                      8,
+                                      Math.round(
+                                        (value /
+                                          maxTrendValue) *
+                                          100
+                                      )
+                                    );
+
+                              return (
+                                <div
+                                  key={`${item.date}-${index}`}
+                                  className="group relative flex h-full flex-1 items-end"
+                                >
+
+                                  <div
+                                    className="w-full rounded-t bg-blue-500/70 transition-all duration-300 group-hover:bg-blue-400"
+                                    style={{
+                                      height: `${height}%`,
+                                    }}
+                                  />
+
+                                  <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-white/10 bg-[#07111f] px-2 py-1 text-[9px] text-slate-300 shadow-xl group-hover:block">
+                                    {item.date}
+                                    {" · "}
+                                    {value}
+                                    {" anomalies"}
+                                  </div>
+
+                                </div>
+                              );
+                            }
+                          )}
+
+                        </div>
+
+                        <div className="mt-3 flex justify-between text-[9px] text-slate-600">
+
+                          <span>
+                            {
+                              riskTrend[0]
+                                ?.date
+                            }
+                          </span>
+
+                          <span>
+                            {
+                              riskTrend[
+                                riskTrend.length -
+                                  1
+                              ]?.date
+                            }
+                          </span>
+
+                        </div>
+
+                      </div>
+
+                    )}
+
+                  </div>
+
+                </div>
+
+              ) : (
+
+                <div className="mt-8 rounded-2xl border border-dashed border-white/10 p-10 text-center">
+
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-400/10 text-blue-400">
+                    ◎
+                  </div>
+
+                  <p className="mt-4 text-sm font-semibold text-slate-400">
+                    Select an employee to view intelligence
+                  </p>
+
+                  <p className="mt-1 text-xs text-slate-600">
+                    Risk scoring, peer comparison and behavioral trends will appear here.
+                  </p>
+
+                </div>
+
               )}
 
-            </div>
+            </section>
+
+            {/* =================================================
+                QUICK ACTIONS
+            ================================================= */}
+
+            <section className="mt-6 grid gap-4 md:grid-cols-3">
+
+              <QuickAction
+                href="/anomalies"
+                title="Anomaly Detection"
+                description="Review rule and ML anomalies"
+              />
+
+              <QuickAction
+                href="/investigation"
+                title="Threat Investigation"
+                description="Investigate employee security incidents"
+              />
+
+              <QuickAction
+                href="/alerts"
+                title="Security Alerts"
+                description="Review generated security alerts"
+              />
+
+            </section>
+
+            {/* =================================================
+                FOOTER
+            ================================================= */}
+
+            <footer className="mt-10 border-t border-white/10 py-6">
+
+              <div className="flex flex-col gap-2 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+
+                <p>
+                  ITBIS · Insider Threat Detection & Behavioral Security Intelligence
+                </p>
+
+                <p>
+                  Employee intelligence operational
+                </p>
+
+              </div>
+
+            </footer>
 
           </div>
 
         </div>
-      )}
 
-      {/* Add Employee Modal */}
-      {showAddModal && (
-        <EmployeeForm
-          title="Add Employee"
-          form={form}
-          updateForm={updateForm}
-          loading={formLoading}
-          onSubmit={addEmployee}
-          onClose={closeAddModal}
-        />
-      )}
-
-      {/* Edit Employee Modal */}
-      {showEditModal && selectedEmployee && (
-        <EmployeeForm
-          title="Edit Employee"
-          form={form}
-          updateForm={updateForm}
-          loading={formLoading}
-          onSubmit={updateEmployee}
-          onClose={closeEditModal}
-          editing
-        />
-      )}
-
-    </div>
+      </main>
+    </AuthGuard>
   );
 }
 
-/* ---------------------------------------------
-   Statistics Card
---------------------------------------------- */
 
-function StatCard({
+// =========================================================
+// NAV ITEM
+// =========================================================
+
+function NavItem({
+  href,
+  label,
+  icon,
+  active,
+}) {
+  return (
+    <Link
+      href={href}
+      className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${
+        active
+          ? "bg-blue-500/10 text-blue-400 ring-1 ring-blue-400/10"
+          : "text-slate-500 hover:bg-white/[0.04] hover:text-slate-200"
+      }`}
+    >
+
+      <span className="w-5 text-center">
+        {icon}
+      </span>
+
+      {label}
+
+    </Link>
+  );
+}
+
+
+// =========================================================
+// KPI CARD
+// =========================================================
+
+function KpiCard({
   label,
   value,
   description,
+  icon,
+  accent = "default",
 }) {
+  const styles = {
+    default:
+      "bg-slate-400/10 text-slate-300",
+
+    blue:
+      "bg-blue-400/10 text-blue-400",
+
+    red:
+      "bg-red-400/10 text-red-400",
+
+    green:
+      "bg-emerald-400/10 text-emerald-400",
+
+    yellow:
+      "bg-amber-400/10 text-amber-400",
+  };
+
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+    <div className="group rounded-2xl border border-white/10 bg-[#0b1727] p-5 transition hover:-translate-y-0.5 hover:border-white/20">
 
       <div className="flex items-start justify-between">
 
         <div>
 
-          <p className="text-sm text-slate-500">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
             {label}
           </p>
 
-          <p className="text-3xl font-semibold text-slate-900 mt-2">
+          <p className="mt-3 text-2xl font-black tracking-tight">
             {value}
           </p>
 
-          <p className="text-xs text-slate-400 mt-1">
-            {description}
-          </p>
-
         </div>
 
-        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
-          ◉
+        <div
+          className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold ${styles[accent]}`}
+        >
+          {icon}
         </div>
+
+      </div>
+
+      <p className="mt-4 text-xs text-slate-600">
+        {description}
+      </p>
+
+    </div>
+  );
+}
+
+
+// =========================================================
+// RISK BADGE
+// =========================================================
+
+function RiskBadge({
+  level,
+  large = false,
+}) {
+  const value =
+    String(level || "Low")
+      .toLowerCase();
+
+  let classes =
+    "border-emerald-400/20 bg-emerald-400/10 text-emerald-400";
+
+  if (value === "critical") {
+    classes =
+      "border-red-400/20 bg-red-400/10 text-red-400";
+  } else if (value === "high") {
+    classes =
+      "border-orange-400/20 bg-orange-400/10 text-orange-400";
+  } else if (value === "medium") {
+    classes =
+      "border-amber-400/20 bg-amber-400/10 text-amber-400";
+  }
+
+  return (
+    <span
+      className={`inline-flex rounded-full border px-3 py-1 font-bold uppercase tracking-wider ${classes} ${
+        large
+          ? "px-4 py-2 text-sm"
+          : "text-[10px]"
+      }`}
+    >
+      {level || "Low"}
+    </span>
+  );
+}
+
+
+// =========================================================
+// RISK FACTOR
+// =========================================================
+
+function RiskFactor({
+  label,
+  value,
+}) {
+  const score =
+    Number(value) || 0;
+
+  const percentage =
+    Math.min(
+      100,
+      Math.max(0, score)
+    );
+
+  return (
+    <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
+
+      <div className="flex items-center justify-between">
+
+        <span className="text-xs font-semibold text-slate-400">
+          {label}
+        </span>
+
+        <span className="text-sm font-bold text-slate-200">
+          {score}
+        </span>
+
+      </div>
+
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/5">
+
+        <div
+          className={`h-full rounded-full transition-all duration-700 ${
+            score >= 75
+              ? "bg-red-500"
+              : score >= 50
+              ? "bg-orange-400"
+              : score >= 25
+              ? "bg-amber-400"
+              : "bg-blue-500"
+          }`}
+          style={{
+            width: `${percentage}%`,
+          }}
+        />
 
       </div>
 
@@ -1837,19 +1729,35 @@ function StatCard({
   );
 }
 
-/* ---------------------------------------------
-   Information Display
---------------------------------------------- */
 
-function Info({ label, value }) {
+// =========================================================
+// PEER METRIC
+// =========================================================
+
+function PeerMetric({
+  label,
+  value,
+  highlight = false,
+}) {
+  const numeric =
+    Number(value);
+
   return (
-    <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
+    <div>
 
-      <p className="text-xs uppercase tracking-wide text-slate-400">
+      <p className="text-[10px] text-slate-600">
         {label}
       </p>
 
-      <p className="text-sm font-medium text-slate-900 mt-1 break-words">
+      <p
+        className={`mt-1 text-lg font-bold ${
+          highlight &&
+          !Number.isNaN(numeric) &&
+          numeric > 0
+            ? "text-amber-400"
+            : "text-slate-200"
+        }`}
+      >
         {value}
       </p>
 
@@ -1857,252 +1765,123 @@ function Info({ label, value }) {
   );
 }
 
-/* ---------------------------------------------
-   Employee Add/Edit Form
---------------------------------------------- */
 
-function EmployeeForm({
-  title,
-  form,
-  updateForm,
-  loading,
-  onSubmit,
-  onClose,
-  editing = false,
-}) {
-  return (
-    <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+// =========================================================
+// TREND METRIC
+// =========================================================
 
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
-
-        {/* Modal Header */}
-        <div className="p-6 border-b border-slate-200 flex justify-between items-start">
-
-          <div>
-
-            <div className="flex items-center gap-2 mb-2">
-
-              <span className="w-2 h-2 rounded-full bg-green-500" />
-
-              <span className="text-xs uppercase tracking-widest text-slate-400 font-semibold">
-                Employee Management
-              </span>
-
-            </div>
-
-            <h2 className="text-xl font-semibold text-slate-900">
-              {title}
-            </h2>
-
-            <p className="text-sm text-slate-500 mt-1">
-              {editing
-                ? "Update employee profile information."
-                : "Create a new employee profile."}
-            </p>
-
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-9 h-9 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 text-xl"
-          >
-            ×
-          </button>
-
-        </div>
-
-        {/* Form */}
-        <form
-          onSubmit={onSubmit}
-          className="p-6 space-y-4"
-        >
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-            <Field
-              label="Employee ID"
-              value={form.employee_id}
-              disabled={editing}
-              onChange={(value) =>
-                updateForm(
-                  "employee_id",
-                  value
-                )
-              }
-              placeholder="EMP1007"
-            />
-
-            <Field
-              label="Name"
-              value={form.name}
-              onChange={(value) =>
-                updateForm(
-                  "name",
-                  value
-                )
-              }
-              placeholder="Employee name"
-            />
-
-            <Field
-              label="Department"
-              value={form.department}
-              onChange={(value) =>
-                updateForm(
-                  "department",
-                  value
-                )
-              }
-              placeholder="Finance"
-            />
-
-            <Field
-              label="Designation"
-              value={form.designation}
-              onChange={(value) =>
-                updateForm(
-                  "designation",
-                  value
-                )
-              }
-              placeholder="Financial Analyst"
-            />
-
-            <Field
-              label="Manager ID"
-              value={form.manager_id}
-              onChange={(value) =>
-                updateForm(
-                  "manager_id",
-                  value
-                )
-              }
-              placeholder="1"
-              type="number"
-            />
-
-            <Field
-              label="Device Info"
-              value={form.device_info}
-              onChange={(value) =>
-                updateForm(
-                  "device_info",
-                  value
-                )
-              }
-              placeholder="Laptop / workstation"
-            />
-
-          </div>
-
-          <Field
-            label="Access Privileges"
-            value={form.access_privileges}
-            onChange={(value) =>
-              updateForm(
-                "access_privileges",
-                value
-              )
-            }
-            placeholder="Standard user access"
-          />
-
-          {/* Buttons */}
-          <div className="flex gap-3 pt-3">
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 border border-slate-200 text-slate-700 rounded-xl py-3 font-medium hover:bg-slate-50 transition"
-            >
-              Cancel
-            </button>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-slate-900 hover:bg-slate-800 text-white rounded-xl py-3 font-semibold disabled:opacity-50 transition"
-            >
-              {loading
-                ? "Saving..."
-                : editing
-                ? "Save Changes"
-                : "Add Employee"}
-            </button>
-
-          </div>
-
-        </form>
-
-      </div>
-
-    </div>
-  );
-}
-
-/* ---------------------------------------------
-   Reusable Input Field
---------------------------------------------- */
-
-function Field({
+function TrendMetric({
   label,
   value,
-  onChange,
-  placeholder,
-  type = "text",
-  disabled = false,
+  blue = false,
 }) {
-  const optionalFields = [
-    "Manager ID",
-    "Device Info",
-    "Access Privileges",
-  ];
-
   return (
     <div>
 
-      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+      <p className="text-[10px] text-slate-600">
         {label}
-      </label>
+      </p>
 
-      <input
-        type={type}
-        value={value}
-        disabled={disabled}
-        placeholder={placeholder}
-        onChange={(e) =>
-          onChange(e.target.value)
-        }
-        required={
-          !optionalFields.includes(label)
-        }
-        className="border border-slate-200 rounded-xl px-3.5 py-3 w-full outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100 disabled:bg-slate-100 disabled:text-slate-500"
-      />
+      <p
+        className={`mt-1 text-lg font-bold ${
+          blue
+            ? "capitalize text-blue-400"
+            : "text-slate-200"
+        }`}
+      >
+        {value}
+      </p>
 
     </div>
   );
 }
 
-/* ---------------------------------------------
-   Employee Initials
---------------------------------------------- */
 
-function getInitials(name) {
-  if (!name) return "?";
+// =========================================================
+// QUICK ACTION
+// =========================================================
 
-  const parts = name
-    .trim()
-    .split(/\s+/);
-
-  if (parts.length === 1) {
-    return parts[0]
-      .slice(0, 2)
-      .toUpperCase();
-  }
-
+function QuickAction({
+  href,
+  title,
+  description,
+}) {
   return (
-    parts[0][0] +
-    parts[parts.length - 1][0]
-  ).toUpperCase();
+    <Link
+      href={href}
+      className="group rounded-2xl border border-white/10 bg-[#0b1727] p-5 transition hover:border-blue-400/20 hover:bg-blue-400/5"
+    >
+
+      <div className="flex items-center justify-between">
+
+        <div>
+
+          <p className="text-sm font-bold text-slate-300 group-hover:text-blue-300">
+            {title}
+          </p>
+
+          <p className="mt-1 text-xs text-slate-600">
+            {description}
+          </p>
+
+        </div>
+
+        <span className="text-slate-600 transition group-hover:translate-x-1 group-hover:text-blue-400">
+          →
+        </span>
+
+      </div>
+
+    </Link>
+  );
+}
+
+
+// =========================================================
+// LOADING SKELETON
+// =========================================================
+
+function EmployeesSkeleton() {
+  return (
+    <main className="min-h-screen bg-[#07111f] p-6 text-white">
+
+      <div className="mx-auto max-w-[1500px] animate-pulse">
+
+        <div className="mb-8 flex items-center justify-between">
+
+          <div>
+
+            <div className="h-3 w-40 rounded bg-white/10" />
+
+            <div className="mt-3 h-8 w-72 rounded bg-white/10" />
+
+            <div className="mt-3 h-3 w-96 rounded bg-white/10" />
+
+          </div>
+
+          <div className="h-10 w-28 rounded-xl bg-white/10" />
+
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+          {[1, 2, 3, 4].map(
+            (item) => (
+              <div
+                key={item}
+                className="h-36 rounded-2xl bg-white/5"
+              />
+            )
+          )}
+
+        </div>
+
+        <div className="mt-6 h-96 rounded-3xl bg-white/5" />
+
+        <div className="mt-6 h-[700px] rounded-3xl bg-white/5" />
+
+      </div>
+
+    </main>
+  );
 }

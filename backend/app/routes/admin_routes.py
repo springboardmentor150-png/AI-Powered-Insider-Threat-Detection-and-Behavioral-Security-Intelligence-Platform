@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User, Employee, Incident, Alert
+from app.alert_generation import generate_alerts_from_anomalies
 from app.schemas import (
     UserResponse,
     IncidentCreate,
@@ -108,3 +109,26 @@ def create_alert(
     db.commit()
     db.refresh(alert)
     return alert
+
+# =========================================================
+# Day 27 - Generate Alerts From Anomalies
+# =========================================================
+
+@router.post("/alerts/generate")
+def generate_alerts(
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role(
+        "admin",
+        "security_analyst",
+        "soc_engineer",
+    )),
+):
+    """
+    Generate PostgreSQL alerts from MongoDB rule-based
+    and ML anomalies.
+
+    Duplicate/unprocessed anomalies are handled by the
+    alert generation engine.
+    """
+
+    return generate_alerts_from_anomalies(db)
