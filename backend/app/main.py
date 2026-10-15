@@ -16,7 +16,8 @@ from app.routes import (
     ueba_routes,
     dashboard_routes,
     ai_routes,
-    simulation_routes
+    simulation_routes,
+    report_routes
 )
 
 # Initialize tables and seed records immediately on load
@@ -24,14 +25,14 @@ seed_database()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("[STARTUP] ITBIS Milestone 3 Operational.")
+    print("[STARTUP] ITBIS Milestone 4 Operational: Dashboards, Reports & Export System Active.")
     yield
     print("[SHUTDOWN] ITBIS Gateway shutting down.")
 
 app = FastAPI(
-    title="AI Insider Threat Behavioral Intelligence System (ITBIS) - Milestone 3",
-    description="Risk Scoring, UEBA Intelligence, Threat Investigation & Security Dashboards (Milestone 3).",
-    version="3.0.0",
+    title="AI Insider Threat Behavioral Intelligence System (ITBIS) - Milestone 4",
+    description="Risk Scoring, UEBA Intelligence, Threat Investigation, Executive & Admin Dashboards, and Reports & Export System.",
+    version="4.0.0",
     lifespan=lifespan
 )
 
@@ -55,12 +56,14 @@ routers = [
     ueba_routes.router,
     dashboard_routes.router,
     ai_routes.router,
-    simulation_routes.router
+    simulation_routes.router,
+    report_routes.router
 ]
 
 for r in routers:
     app.include_router(r, prefix=settings.API_V1_STR)
     app.include_router(r)
+
 
 @app.get("/")
 def health_check():

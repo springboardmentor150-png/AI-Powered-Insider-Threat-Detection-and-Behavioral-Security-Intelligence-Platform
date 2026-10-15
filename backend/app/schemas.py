@@ -92,13 +92,14 @@ class AlertOut(BaseModel):
     assigned_to: Optional[int] = None
     incident_id: Optional[int] = None
     created_at: datetime
+    resolved_at: Optional[datetime] = None
     employee: Optional[EmployeeOut] = None
     model_config = ConfigDict(from_attributes=True)
 
 class AlertAcknowledge(BaseModel):
     is_acknowledged: bool = True
 
-# --- Incident Schemas (Milestone 3) ---
+# --- Incident Schemas (Milestone 3 & 4) ---
 class IncidentCreate(BaseModel):
     employee_id: str
     title: Optional[str] = None
@@ -127,8 +128,22 @@ class IncidentOut(BaseModel):
     ai_summary: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
+    investigation_started_at: Optional[datetime] = None
+    resolved_at: Optional[datetime] = None
     employee: Optional[EmployeeOut] = None
     model_config = ConfigDict(from_attributes=True)
+
+# --- Audit Log Schemas (Milestone 4 Day 32) ---
+class AuditLogOut(BaseModel):
+    id: Optional[int] = None
+    user_id: Optional[int] = None
+    user_email: Optional[str] = None
+    action: str
+    target_resource: Optional[str] = None
+    details: Optional[str] = None
+    timestamp: datetime
+    model_config = ConfigDict(from_attributes=True)
+
 
 # --- AI & Threat Intelligence Schemas ---
 class AIAnalysisResult(BaseModel):

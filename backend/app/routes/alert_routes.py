@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Alert, Incident, Employee, User, AuditLog
+from datetime import datetime
+from app.models import Alert, Incident, Employee, User, AuditLog, log_action
 from app.schemas import AlertOut
 from app.auth import get_current_user, require_role
 from app.risk_scoring import calculate_risk_score
@@ -58,6 +59,11 @@ def assign_alert(
     alert.assigned_to = analyst_user_id
     alert.status = "assigned"
     db.commit()
+
+    # Day 32 Audit Log
+    user_id = user.id if hasattr(user, "id") else (int(user.get("sub", 1)) if isinstance(user, dict) else 1)
+    log_action(db, user_id=user_id, action="assign_alert", details=f"alert_id={alert_id}, assigned_to={analyst.email}", target_resource=f"Alert:{alert_id}")
+
     return {"message": f"Alert {alert_id} assigned to {analyst.email}", "status": alert.status}
 
 @router.patch("/alerts/{alert_id}/resolve")
@@ -74,8 +80,15 @@ def resolve_alert(
         raise HTTPException(status_code=404, detail="Alert not found")
     alert.status = "resolved"
     alert.is_acknowledged = True
+    alert.resolved_at = datetime.utcnow()
     db.commit()
+
+    # Day 32 Audit Log & Day 31 MTTR Timestamping
+    user_id = user.id if hasattr(user, "id") else (int(user.get("sub", 1)) if isinstance(user, dict) else 1)
+    log_action(db, user_id=user_id, action="resolve_alert", details=f"alert_id={alert_id}", target_resource=f"Alert:{alert_id}")
+
     return {"message": f"Alert {alert_id} resolved", "status": alert.status}
+
 
 @router.post("/alerts/{alert_id}/acknowledge", response_model=AlertOut)
 def acknowledge_alert(

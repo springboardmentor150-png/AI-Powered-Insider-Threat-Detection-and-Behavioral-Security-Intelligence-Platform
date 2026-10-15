@@ -7,6 +7,249 @@
       "attachment": "archive_backup.enc",
       "size_mb": 590.0
     },
+    "timestamp": "2026-10-09T02:40:57.313681",
+    "_id": "c1d7313a-1800-4105-a0e7-38a82eb31cc9"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "file_download",
+    "details": {
+      "file_name": "customer_pci_tokens_q4.csv",
+      "size_mb": 180.0,
+      "is_confidential": true
+    },
+    "timestamp": "2026-10-09T02:33:57.313681",
+    "_id": "dc84d016-758b-4adb-9379-62a245bbb48a"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "usb_connect",
+    "details": {
+      "vendor_id": "SanDisk_Ultra_128G",
+      "serial": "SD-99410-X",
+      "action": "MOUNTED_READ_WRITE"
+    },
+    "timestamp": "2026-10-09T02:25:57.313681",
+    "_id": "e8a9ea97-9b71-43a4-a577-4cf77bcc8b77"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "file_download",
+    "details": {
+      "file_name": "src_core_proprietary_algorithms.zip",
+      "size_mb": 420.5,
+      "is_confidential": true
+    },
+    "timestamp": "2026-10-09T02:20:57.313681",
+    "_id": "68c30e18-f8a8-460c-9fb9-a2b42c804360"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "login",
+    "details": {
+      "ip_address": "192.168.1.185",
+      "device": "workstation-mac-01",
+      "is_off_hours": true,
+      "auth_method": "VPN"
+    },
+    "timestamp": "2026-10-09T02:15:57.313681",
+    "_id": "978d1e47-7161-4e18-b2fa-20d7a53188ad"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "access_key_created",
+    "details": {
+      "iam_user": "shadow_admin_backdoor",
+      "permissions": "FullAdministratorAccess"
+    },
+    "timestamp": "2026-10-09T03:57:54.095825",
+    "_id": "f561769f-c78b-41c4-bb3f-525e09b2898d"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "system_config",
+    "details": {
+      "action": "DISABLE_AUDITD_LOGGING",
+      "affected_host": "prod-auth-cluster"
+    },
+    "timestamp": "2026-10-09T03:51:54.095825",
+    "_id": "8b58abe8-21fd-4cc6-b498-ccb112d7da88"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "privilege_escalation",
+    "details": {
+      "command": "sudo su - root",
+      "target_role": "SUPERADMIN",
+      "sudo": true
+    },
+    "timestamp": "2026-10-09T03:47:54.095825",
+    "_id": "a11bdb71-71d3-4ca9-8e8e-f63c548ee031"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "login",
+    "details": {
+      "ip_address": "185.220.101.42",
+      "geo_country": "Tor_Exit_Node_RU",
+      "is_off_hours": true,
+      "mfa_bypassed": true
+    },
+    "timestamp": "2026-10-09T03:45:54.095825",
+    "_id": "ff387480-5cbe-4a19-bb73-637762faf78a"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "slack_message",
+    "details": {
+      "channel": "#engineering",
+      "messages_sent": 14
+    },
+    "timestamp": "2026-10-09T00:14:52.292005",
+    "_id": "edbc0c1a-a6fe-404b-84c2-2bc5dd564e68"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "database_query",
+    "details": {
+      "table_name": "tasks",
+      "rows_accessed": 12,
+      "query_type": "SELECT"
+    },
+    "timestamp": "2026-10-08T23:44:52.292005",
+    "_id": "2d8d266e-f005-466b-8fe2-ce7adee97578"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "file_download",
+    "details": {
+      "file_name": "sprint_design_spec.pdf",
+      "size_mb": 4.2
+    },
+    "timestamp": "2026-10-08T22:44:52.292005",
+    "_id": "5d613e18-5ede-4c9a-9ad6-bb4e2f19d304"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "git_commit",
+    "details": {
+      "repository": "itbis-core-service",
+      "commit_hash": "a9f41b2",
+      "lines_changed": 45
+    },
+    "timestamp": "2026-10-08T21:44:52.292005",
+    "_id": "d1c326b6-91f0-4907-8a2b-4c9764fb8dc0"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "login",
+    "details": {
+      "ip_address": "10.0.4.52",
+      "device": "office-dock-04",
+      "auth_method": "SSO_OKTA"
+    },
+    "timestamp": "2026-10-08T20:44:52.292005",
+    "_id": "db9c9f3c-350b-4751-815c-4ab18415a849"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "file_download",
+    "details": {
+      "file_name": "dump_sql_export.tar.gz",
+      "size_mb": 310.0,
+      "is_confidential": true
+    },
+    "timestamp": "2026-10-09T00:42:48.500034",
+    "_id": "20b209d5-5986-4c93-b0e7-890fbecdf676"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "database_query",
+    "details": {
+      "table_name": "patient_health_records",
+      "rows_accessed": 7200,
+      "query_type": "SELECT *",
+      "execution_time_sec": 19.4
+    },
+    "timestamp": "2026-10-09T00:36:48.500034",
+    "_id": "a051b07e-aa73-44ca-8039-0cbb5d1ec860"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "database_query",
+    "details": {
+      "table_name": "users_credit_cards",
+      "rows_accessed": 18500,
+      "query_type": "SELECT *",
+      "execution_time_sec": 42.1
+    },
+    "timestamp": "2026-10-09T00:29:48.500034",
+    "_id": "0e986aa4-f9f0-4235-a352-fa43dceff75d"
+  },
+  {
+    "employee_id": "EMP1003",
+    "event_type": "email_sent",
+    "details": {
+      "recipient": "personal.dropbox.backup@gmail.com",
+      "attachment": "archive_backup.enc",
+      "size_mb": 590.0
+    },
+    "timestamp": "2026-10-09T02:40:01.329043",
+    "_id": "81a69b0a-6efb-4a2f-8f36-90a34540f787"
+  },
+  {
+    "employee_id": "EMP1003",
+    "event_type": "file_download",
+    "details": {
+      "file_name": "customer_pci_tokens_q4.csv",
+      "size_mb": 180.0,
+      "is_confidential": true
+    },
+    "timestamp": "2026-10-09T02:33:01.329043",
+    "_id": "6b735c63-12e9-4d9a-9101-ec43ad87d84a"
+  },
+  {
+    "employee_id": "EMP1003",
+    "event_type": "usb_connect",
+    "details": {
+      "vendor_id": "SanDisk_Ultra_128G",
+      "serial": "SD-99410-X",
+      "action": "MOUNTED_READ_WRITE"
+    },
+    "timestamp": "2026-10-09T02:25:01.329043",
+    "_id": "1069f3e6-3595-4410-810b-fe06c8a412a0"
+  },
+  {
+    "employee_id": "EMP1003",
+    "event_type": "file_download",
+    "details": {
+      "file_name": "src_core_proprietary_algorithms.zip",
+      "size_mb": 420.5,
+      "is_confidential": true
+    },
+    "timestamp": "2026-10-09T02:20:01.329043",
+    "_id": "d787621d-da6e-4792-821a-c5c70e058bbc"
+  },
+  {
+    "employee_id": "EMP1003",
+    "event_type": "login",
+    "details": {
+      "ip_address": "192.168.1.185",
+      "device": "workstation-mac-01",
+      "is_off_hours": true,
+      "auth_method": "VPN"
+    },
+    "timestamp": "2026-10-09T02:15:01.329043",
+    "_id": "fb64c908-f10b-41c5-bcac-d22386f2fecf"
+  },
+  {
+    "employee_id": "EMP1001",
+    "event_type": "email_sent",
+    "details": {
+      "recipient": "personal.dropbox.backup@gmail.com",
+      "attachment": "archive_backup.enc",
+      "size_mb": 590.0
+    },
     "timestamp": "2026-10-05T02:40:19.862981",
     "_id": "7a56562e-dfb3-45a5-8b6c-58d244f5c5ab"
   },

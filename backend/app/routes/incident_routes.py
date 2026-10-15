@@ -1,11 +1,12 @@
-﻿# backend/app/routes/incident_routes.py
+# backend/app/routes/incident_routes.py
 import uuid
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db, doc_db
-from app.models import Incident, Employee, Alert, User, AuditLog
+from datetime import datetime
+from app.models import Incident, Employee, Alert, User, AuditLog, log_action
 from app.schemas import IncidentCreate, IncidentStatusUpdate, IncidentOut
 from app.auth import get_current_user, require_role
 from app.ml_engine.threat_explainer import threat_explainer
@@ -60,11 +61,21 @@ def create_incident(
         severity=inc_in.severity.upper(),
         status="OPEN",
         assigned_to=inc_in.assigned_to or current_user.email,
-        mitre_attack_technique=inc_in.mitre_attack_technique or "T1078 - Valid Accounts"
+        mitre_attack_technique=inc_in.mitre_attack_technique or "T1078 - Valid Accounts",
+        created_at=datetime.utcnow()
     )
     db.add(new_incident)
     db.commit()
     db.refresh(new_incident)
+
+    # Day 32 Audit Log
+    log_action(
+        db,
+        user_id=current_user.id,
+        action="create_incident",
+        details=f"Created {inc_code} for {new_incident.employee_id} with severity {new_incident.severity}",
+        target_resource=f"Incident:{new_incident.incident_code}"
+    )
 
     return new_incident
 
@@ -79,27 +90,36 @@ def update_incident_status(
     if not incident:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
 
-    incident.status = update_in.status.upper()
+    old_status = (incident.status or "OPEN").upper()
+    new_status = update_in.status.upper()
+    incident.status = new_status
     if update_in.assigned_to:
         incident.assigned_to = update_in.assigned_to
     if update_in.ai_summary:
         incident.ai_summary = update_in.ai_summary
 
+    # Day 31: precise MTTI tracking - set investigation_started_at when moving away from OPEN
+    if old_status == "OPEN" and new_status != "OPEN" and not incident.investigation_started_at:
+        incident.investigation_started_at = datetime.utcnow()
+    
+    # Day 31 & 34: set resolved_at when marked resolved/closed
+    if new_status in ["RESOLVED", "CLOSED"] and not incident.resolved_at:
+        incident.resolved_at = datetime.utcnow()
+
     db.commit()
     db.refresh(incident)
 
-    # Audit trail
-    audit = AuditLog(
+    # Day 32 Audit Log
+    log_action(
+        db,
         user_id=current_user.id,
-        user_email=current_user.email,
-        action="UPDATE_INCIDENT_STATUS",
-        target_resource=f"Incident:{incident.incident_code}",
-        details=f"Status changed to {incident.status} by {current_user.email}"
+        action="update_incident_status",
+        details=f"Status changed from {old_status} to {new_status} by {current_user.email}",
+        target_resource=f"Incident:{incident.incident_code}"
     )
-    db.add(audit)
-    db.commit()
 
     return incident
+
 
 @router.post("/{incident_id}/generate-ai-report")
 def generate_ai_incident_report(

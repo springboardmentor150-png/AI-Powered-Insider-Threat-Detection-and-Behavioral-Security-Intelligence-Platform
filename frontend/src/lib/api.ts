@@ -82,11 +82,74 @@ export const incidentAPI = {
   generateAIReport: (id: number) => api.post(`/incidents/${id}/generate-ai-report`),
 };
 
-// Security Dashboard Endpoints (Milestone 3)
+// Security Dashboard Endpoints (Milestones 3 & 4)
 export const dashboardAPI = {
   getAnalystDashboard: () => api.get("/dashboard/analyst"),
   getSocDashboard: () => api.get("/dashboard/soc"),
   getManagerDashboard: () => api.get("/dashboard/manager"),
+  getComplianceMetrics: () => api.get("/dashboard/manager/compliance"),
+  getAdminDashboard: () => api.get("/dashboard/admin"),
+  getPlatformAnalytics: () => api.get("/dashboard/admin/platform-analytics"),
+  getAuditLog: (limit: number = 50) => api.get(`/dashboard/admin/audit-log?limit=${limit}`),
+};
+
+// Reports & Export System (Milestone 4 Days 33 & 34)
+export const reportAPI = {
+  getCatalog: () => api.get("/reports/catalog"),
+  downloadEmployeePdf: async (employeeId: string) => {
+    const res = await api.get(`/reports/${employeeId}/pdf`, { responseType: "blob" });
+    const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${employeeId}_risk_report.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  },
+  downloadCompliancePdf: async () => {
+    const res = await api.get("/reports/compliance/pdf", { responseType: "blob" });
+    const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "compliance_summary_report.pdf");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  },
+  downloadRiskScoresExcel: async (department?: string) => {
+    const params = department ? { department } : {};
+    const res = await api.get("/reports/export/risk-scores", { params, responseType: "blob" });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", department ? `risk_scores_${department}_export.xlsx` : "risk_scores_export.xlsx");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  },
+  downloadIncidentsExcel: async (statusFilter?: string, severity?: string) => {
+    const params: any = {};
+    if (statusFilter) params.status = statusFilter;
+    if (severity) params.severity = severity;
+    const res = await api.get("/reports/export/incidents", { params, responseType: "blob" });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "incidents_export.xlsx");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  },
+  downloadAuditLogsExcel: async () => {
+    const res = await api.get("/reports/export/audit-logs", { responseType: "blob" });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "audit_logs_export.xlsx");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  },
 };
 
 // AI & Behavioral Analysis Endpoints

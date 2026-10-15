@@ -55,6 +55,8 @@ class Incident(Base):
     ai_summary = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    investigation_started_at = Column(DateTime, nullable=True)
+    resolved_at = Column(DateTime, nullable=True)
 
     employee = relationship("Employee", back_populates="incidents")
     alerts = relationship("Alert", back_populates="incident")
@@ -91,6 +93,7 @@ class Alert(Base):
     assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)
     incident_id = Column(Integer, ForeignKey("incidents.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    resolved_at = Column(DateTime, nullable=True)
 
     employee = relationship("Employee", back_populates="alerts")
     incident = relationship("Incident", back_populates="alerts")
@@ -109,3 +112,23 @@ class AuditLog(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="audit_logs")
+
+
+def log_action(db, user_id: int, action: str, details: str = None, target_resource: str = None):
+    """
+    Day 32 Simple Audit Log helper: records sensitive administrative and analyst actions.
+    """
+    user = db.query(User).filter(User.id == user_id).first() if user_id else None
+    user_email = user.email if user else None
+    entry = AuditLog(
+        user_id=user_id,
+        user_email=user_email,
+        action=action,
+        target_resource=target_resource,
+        details=details,
+        timestamp=datetime.utcnow()
+    )
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return entry

@@ -31,8 +31,10 @@ export default function DashboardPage() {
   const [analystData, setAnalystData] = useState<any>(null);
   const [socData, setSocData] = useState<any>(null);
   const [managerData, setManagerData] = useState<any>(null);
+  const [complianceData, setComplianceData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [analyzingAll, setAnalyzingAll] = useState(false);
+
 
   const fetchData = async () => {
     try {
@@ -48,7 +50,7 @@ export default function DashboardPage() {
       setIncidents(incRes.data || []);
       setLogStats(statsRes.data || null);
 
-      // Milestone 3 Role-Appropriate Dashboard Endpoints
+      // Milestone 3 & 4 Role-Appropriate Dashboard Endpoints
       try {
         const socRes = await dashboardAPI.getSocDashboard();
         setSocData(socRes.data);
@@ -63,6 +65,12 @@ export default function DashboardPage() {
         const mRes = await dashboardAPI.getManagerDashboard();
         setManagerData(mRes.data);
       } catch (e) {}
+
+      try {
+        const compRes = await dashboardAPI.getComplianceMetrics();
+        setComplianceData(compRes.data);
+      } catch (e) {}
+
 
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
@@ -175,6 +183,60 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Milestone 4 Day 31: Security Manager Compliance View (SLA & Resolution Rate) */}
+      {complianceData && (user?.role === "admin" || user?.role === "security_manager") && (
+        <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2 font-mono">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              Day 31 Security Manager Compliance & SLA Intelligence
+            </h2>
+            <Link
+              href="/reports"
+              className="text-xs text-rose-400 hover:text-rose-300 font-mono font-medium flex items-center gap-1"
+            >
+              <span>Export Compliance PDF</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/80 text-center">
+              <div className="text-[10px] font-mono uppercase text-slate-400 font-bold">Resolution Rate</div>
+              <div className="text-2xl font-bold text-emerald-400 font-mono">
+                {complianceData.resolution_rate_percent}%
+              </div>
+              <div className="text-[10px] text-slate-400">
+                {complianceData.resolved_incidents} / {complianceData.total_incidents} Resolved
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/60 text-center">
+              <div className="text-[10px] font-mono uppercase text-rose-400 font-bold">Open Critical Incidents</div>
+              <div className="text-2xl font-bold text-rose-300 font-mono">
+                {complianceData.open_critical_incidents}
+              </div>
+              <div className="text-[10px] text-rose-400/80">Immediate Executive Attention</div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/80 text-center">
+              <div className="text-[10px] font-mono uppercase text-cyan-400 font-bold">Mean Time To Respond (MTTR)</div>
+              <div className="text-2xl font-bold text-cyan-300 font-mono">
+                {complianceData.mean_time_to_respond_hours !== null ? `${complianceData.mean_time_to_respond_hours}h` : "N/A"}
+              </div>
+              <div className="text-[10px] text-slate-400">Alert to Resolution Elapsed</div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/80 text-center">
+              <div className="text-[10px] font-mono uppercase text-purple-400 font-bold">Mean Time To Investigate (MTTI)</div>
+              <div className="text-2xl font-bold text-purple-300 font-mono">
+                {complianceData.mean_time_to_investigate_hours !== null ? `${complianceData.mean_time_to_investigate_hours}h` : "N/A"}
+              </div>
+              <div className="text-[10px] text-slate-400">Triage to Active Work Elapsed</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Milestone 3 Risk Distribution Summary (Manager View) */}
       {managerData && (

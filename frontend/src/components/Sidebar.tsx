@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import Link from "next/link";
@@ -12,7 +12,8 @@ import {
   FolderLock,
   PlaySquare,
   ShieldCheck,
-  Cpu
+  Cpu,
+  FileSpreadsheet
 } from "lucide-react";
 
 export const Sidebar: React.FC = () => {
@@ -26,11 +27,13 @@ export const Sidebar: React.FC = () => {
     { label: "Alert Triage", href: "/alerts", icon: AlertTriangle, badge: "Live" },
     { label: "Incidents & SOC", href: "/incidents", icon: FolderLock },
     { label: "Threat Simulator", href: "/simulation", icon: PlaySquare },
+    { label: "Reports & Exports", href: "/reports", icon: FileSpreadsheet },
   ];
 
   if (user?.role === "admin") {
     navItems.push({ label: "Admin & RBAC", href: "/admin", icon: ShieldCheck });
   }
+
 
   return (
     <aside className="w-64 border-r border-slate-800/80 bg-slate-900/40 backdrop-blur-md flex flex-col justify-between py-6 px-4">
