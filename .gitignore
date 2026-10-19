@@ -1,41 +1,54 @@
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
 # Python
 __pycache__/
 *.py[cod]
-*.class
-.venv/
+*$py.class
 venv/
 ENV/
-*.sqlite3
+env/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 *.db
+*.sqlite3
 
-# Environment Variables
-.env
-.env.*
-!.env.example
-
-# Node & Next.js
+# Node.js / Next.js
 node_modules/
 .next/
 out/
-build/
-dist/
 .vercel/
-*.tsbuildinfo
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# IDE & OS
-.vscode/
+# ML Models
+*.pkl
+models/
+
+# IDE / OS
 .idea/
+.vscode/
+*.swp
+*.swo
 .DS_Store
 Thumbs.db
-
-# Data, Logs & Caches
-backend/data/*.json
-*.log
-.pytest_cache/
-coverage/
-.coverage
-
-# Models
-backend/models/
-*.pkl
-
