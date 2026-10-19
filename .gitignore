@@ -45,6 +45,10 @@ yarn-error.log*
 *.pkl
 models/
 
+# Runtime data
+data/
+backend/data/
+
 # IDE / OS
 .idea/
 .vscode/

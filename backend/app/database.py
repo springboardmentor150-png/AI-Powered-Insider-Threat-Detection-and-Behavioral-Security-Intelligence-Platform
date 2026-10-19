@@ -22,7 +22,7 @@ else:
     else:
         DATABASE_URL = raw_db_url
 
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {"connect_timeout": 10}
 
 engine = create_engine(
     DATABASE_URL,

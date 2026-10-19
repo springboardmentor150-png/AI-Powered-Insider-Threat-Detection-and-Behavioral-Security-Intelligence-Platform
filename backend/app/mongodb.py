@@ -7,8 +7,19 @@ from bson import ObjectId
 
 logger = logging.getLogger("itbis.mongodb")
 
-MONGODB_URL = os.environ.get("MONGODB_URL", "mongodb://localhost:27017")
-MONGODB_DATABASE = os.environ.get("MONGODB_DATABASE", "itbis")
+MONGODB_DATABASE = os.environ.get("MONGODB_DATABASE", "itbis").strip() or "itbis"
+
+def _normalize_mongodb_url(raw_url: str, db_name: str) -> str:
+    if not raw_url or not isinstance(raw_url, str):
+        return ""
+    cleaned = raw_url.strip()
+    if cleaned.lower() in {"", "none", "false", "disabled", "null", "undefined", "itbis", "itbis_production", db_name.lower()}:
+        return ""
+    if not (cleaned.startswith("mongodb://") or cleaned.startswith("mongodb+srv://")):
+        return ""
+    return cleaned
+
+MONGODB_URL = _normalize_mongodb_url(os.environ.get("MONGODB_URL", ""), MONGODB_DATABASE)
 MONGODB_COLLECTION = "activity_logs"
 
 VALID_EVENT_TYPES = {
@@ -118,9 +129,32 @@ class MongoDBService:
             logger.warning("Failed to save persistent dev anomalies: %s", e)
 
     def _init_connection(self):
+        if not MONGODB_URL:
+            self._connected = False
+            self._client = None
+            raw_val = os.environ.get("MONGODB_URL", "").strip()
+            if raw_val:
+                logger.warning(
+                    "MONGODB_URL is configured as '%s' (not a valid MongoDB connection string starting with 'mongodb://' or 'mongodb+srv://'). "
+                    "Skipping MongoDB network connection and using persistent JSON telemetry storage (%s).",
+                    raw_val,
+                    _DEV_FILE_PATH,
+                )
+            else:
+                logger.info(
+                    "MONGODB_URL not configured. Operating in persistent JSON telemetry mode (%s).",
+                    _DEV_FILE_PATH,
+                )
+            return
+
         try:
             from pymongo import MongoClient
-            self._client = MongoClient(MONGODB_URL, serverSelectionTimeoutMS=1000)
+            self._client = MongoClient(
+                MONGODB_URL,
+                serverSelectionTimeoutMS=2000,
+                connectTimeoutMS=2000,
+                socketTimeoutMS=2000,
+            )
             self._client.admin.command('ping')
             self._db = self._client[MONGODB_DATABASE]
             self._collection = self._db[MONGODB_COLLECTION]
@@ -175,6 +209,12 @@ class MongoDBService:
                     logger.warning("Sync to MongoDB anomalies collection skipped: %s", sync_err)
         except Exception as e:
             self._connected = False
+            if self._client is not None:
+                try:
+                    self._client.close()
+                except Exception:
+                    pass
+                self._client = None
             logger.warning("MongoDB not reachable at %s. Persistent development mode active (%s). Error: %s", MONGODB_URL, _DEV_FILE_PATH, e)
 
     @property
