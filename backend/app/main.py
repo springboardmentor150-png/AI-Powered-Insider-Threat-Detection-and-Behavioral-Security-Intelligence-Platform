@@ -23,69 +23,110 @@ from app.routes.search_routes import router as search_router
 from app.routes.anomaly_routes import router as anomaly_router
 from app.routes.ueba_routes import router as ueba_router
 
+import threading
+import time
+from contextlib import asynccontextmanager
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("itbis.main")
 
-try:
-    Base.metadata.create_all(bind=engine)
-    logger.info("Database tables initialized successfully.")
-    
-    # Safe SQLite column migration for Milestone 3 extensions
-    try:
-        from sqlalchemy import text
-        with engine.connect() as conn:
-            if "sqlite" in str(engine.url):
-                for table, col, col_type in [
-                    ("incidents", "summary", "TEXT"),
-                    ("incidents", "investigation_started_at", "DATETIME"),
-                    ("investigation_notes", "author_user_id", "INTEGER"),
-                    ("investigation_notes", "note", "TEXT"),
-                    ("investigation_notes", "evidence_reference", "TEXT"),
-                    ("alerts", "incident_id", "INTEGER"),
-                    ("alerts", "escalated_at", "DATETIME"),
-                    ("audit_logs", "user_id", "INTEGER"),
-                ]:
-                    try:
-                        res = conn.execute(text(f"PRAGMA table_info({table});")).fetchall()
-                        col_names = [r[1] for r in res]
-                        if col not in col_names:
-                            conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {col_type};"))
-                            conn.commit()
-                    except Exception:
-                        pass
-    except Exception as ex:
-        logger.warning(f"Schema column check: {ex}")
+_init_lock = threading.Lock()
+_db_status = "initializing"
 
-    with SessionLocal() as db_session:
-        seed_initial_data(db_session)
+def init_database_and_seed():
+    global _db_status
+    with _init_lock:
+        if _db_status == "ready":
+            return
 
-    # Automatic ML Model Regeneration on Startup if missing (Milestone 4: Day 37-38)
-    try:
-        from app.ml_anomaly import DEFAULT_MODEL_PATH, train_isolation_forest, save_model
-        from app.ml_features import extract_daily_features, prepare_feature_matrix
-        from app.mongodb import mongo_service
-        import numpy as np
+        max_retries = 1 if "sqlite" in str(engine.url) else 5
+        for attempt in range(1, max_retries + 1):
+            try:
+                logger.info("Initializing database schema (attempt %d/%d)...", attempt, max_retries)
+                Base.metadata.create_all(bind=engine)
+                logger.info("Database tables initialized successfully.")
 
-        if not os.path.exists(DEFAULT_MODEL_PATH):
-            logger.info(f"Anomaly model file missing at {DEFAULT_MODEL_PATH}. Regenerating automatically...")
-            activities = mongo_service.query_activity_logs(limit=5000).get("items", [])
-            feature_records = extract_daily_features(activities) if activities else []
-            if len(feature_records) >= 5:
-                X, _ = prepare_feature_matrix(feature_records)
-            else:
-                rng = np.random.default_rng(42)
-                X = rng.normal(loc=[0.5, 0.2, 0.05, 50.0, 1.2, 0.3], scale=[0.3, 0.1, 0.02, 15.0, 0.4, 0.2], size=(50, 6))
-                X = np.clip(X, a_min=0.0, a_max=None)
+                # Safe SQLite column migration for Milestone 3 extensions
+                try:
+                    from sqlalchemy import text
+                    with engine.connect() as conn:
+                        if "sqlite" in str(engine.url):
+                            for table, col, col_type in [
+                                ("incidents", "summary", "TEXT"),
+                                ("incidents", "investigation_started_at", "DATETIME"),
+                                ("investigation_notes", "author_user_id", "INTEGER"),
+                                ("investigation_notes", "note", "TEXT"),
+                                ("investigation_notes", "evidence_reference", "TEXT"),
+                                ("alerts", "incident_id", "INTEGER"),
+                                ("alerts", "escalated_at", "DATETIME"),
+                                ("audit_logs", "user_id", "INTEGER"),
+                            ]:
+                                try:
+                                    res = conn.execute(text(f"PRAGMA table_info({table});")).fetchall()
+                                    col_names = [r[1] for r in res]
+                                    if col not in col_names:
+                                        conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {col_type};"))
+                                        conn.commit()
+                                except Exception:
+                                    pass
+                except Exception as ex:
+                    logger.warning("Schema column check: %s", ex)
 
-            model = train_isolation_forest(X, contamination=0.05, random_state=42)
-            save_model(model, DEFAULT_MODEL_PATH)
-            logger.info(f"Anomaly model regenerated successfully at {DEFAULT_MODEL_PATH}.")
-    except Exception as ml_err:
-        logger.warning(f"ML model regeneration check: {ml_err}")
-except Exception as e:
-    logger.warning(f"Could not initialize database tables or seed at startup: {e}")
+                with SessionLocal() as db_session:
+                    seed_initial_data(db_session)
 
-app = FastAPI(title="ITBIS API", version="1.0.0")
+                _db_status = "ready"
+                logger.info("Database schema initialized and initial data seeded successfully.")
+                break
+            except Exception as e:
+                logger.warning("Database init attempt %d/%d failed: %s", attempt, max_retries, e)
+                if attempt < max_retries:
+                    time.sleep(2)
+                else:
+                    _db_status = "degraded"
+                    logger.error("Database initialization failed after %d attempts. Operating in degraded mode.", max_retries)
+
+        # Automatic ML Model Regeneration on Startup if missing (Milestone 4: Day 37-38)
+        try:
+            from app.ml_anomaly import DEFAULT_MODEL_PATH, train_isolation_forest, save_model
+            from app.ml_features import extract_daily_features, prepare_feature_matrix
+            from app.mongodb import mongo_service
+            import numpy as np
+
+            if not os.path.exists(DEFAULT_MODEL_PATH):
+                logger.info("Anomaly model file missing at %s. Regenerating automatically...", DEFAULT_MODEL_PATH)
+                activities = mongo_service.query_activity_logs(limit=5000).get("items", [])
+                feature_records = extract_daily_features(activities) if activities else []
+                if len(feature_records) >= 5:
+                    X, _ = prepare_feature_matrix(feature_records)
+                else:
+                    rng = np.random.default_rng(42)
+                    X = rng.normal(loc=[0.5, 0.2, 0.05, 50.0, 1.2, 0.3], scale=[0.3, 0.1, 0.02, 15.0, 0.4, 0.2], size=(50, 6))
+                    X = np.clip(X, a_min=0.0, a_max=None)
+
+                model = train_isolation_forest(X, contamination=0.05, random_state=42)
+                save_model(model, DEFAULT_MODEL_PATH)
+                logger.info("Anomaly model regenerated successfully at %s.", DEFAULT_MODEL_PATH)
+        except Exception as ml_err:
+            logger.warning("ML model regeneration check: %s", ml_err)
+
+
+# If using SQLite (local dev or pytest), initialize immediately so local tests have fixtures ready
+if "sqlite" in str(engine.url):
+    init_database_and_seed()
+
+
+@asynccontextmanager
+async def lifespan(fastapi_app: FastAPI):
+    if "sqlite" not in str(engine.url):
+        # Run PostgreSQL initialization in background daemon thread
+        # This guarantees Uvicorn binds immediately and /health responds instantly on Render!
+        worker = threading.Thread(target=init_database_and_seed, daemon=True, name="db-init-worker")
+        worker.start()
+    yield
+
+
+app = FastAPI(title="ITBIS API", version="1.0.0", lifespan=lifespan)
 
 app.include_router(auth_router)
 app.include_router(employee_router)
@@ -134,6 +175,11 @@ app.add_middleware(
 @app.get("/")
 @app.get("/health")
 def health_check():
-    return {"status": "ITBIS backend is running"}
+    return {
+        "status": "ITBIS backend is running",
+        "service": "itbis-backend",
+        "database": _db_status,
+        "healthy": True
+    }
 
 
