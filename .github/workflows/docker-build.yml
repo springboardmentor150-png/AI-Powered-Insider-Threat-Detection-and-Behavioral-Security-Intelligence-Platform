@@ -35,8 +35,14 @@ jobs:
         working-directory: ./backend
         run: |
           python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 &
-          sleep 4
-          curl -f http://127.0.0.1:8000/health || exit 1
+          for i in $(seq 1 30); do
+            if curl -s -f http://127.0.0.1:8000/health > /dev/null 2>&1; then
+              echo "ITBIS Backend is up and healthy!"
+              break
+            fi
+            echo "Waiting for backend startup... ($i/30)"
+            sleep 1
+          done
           python -m pytest -v
 
       - name: Set up Docker Buildx
