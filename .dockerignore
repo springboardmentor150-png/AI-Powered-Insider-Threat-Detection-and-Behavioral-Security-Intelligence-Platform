@@ -1,0 +1,15 @@
+.git
+.gitignore
+*.md
+venv/
+.venv/
+env/
+**/node_modules/
+**/.next/
+**/.pytest_cache/
+**/*.pyc
+**/*.pyo
+**/__pycache__/
+*.log
+backend/itbis.db
+backend/data/*.db

@@ -4,6 +4,16 @@
 
 ---
 
+## 🎓 Student Submission & Project Demo
+
+- **Student Name:** Surampudi Durga Naga Venkata Sita Chinmai
+- **Email:** sitasurampudi225@gmail.com
+- **Project Demo Video (Google Drive):** [Watch ITBIS Walkthrough Video](https://drive.google.com/file/d/1NPTyebxSGImSoT8PAZIUhLeznF_e6Ash/view?usp=sharing)
+- **Direct Video URL:** `https://drive.google.com/file/d/1NPTyebxSGImSoT8PAZIUhLeznF_e6Ash/view?usp=sharing`
+- **Milestones Completed:** Milestones 1, 2, 3, and 4 (Full-stack SOC UI, UEBA, Isolation Forest ML, Risk Scoring, Automated Testing & Docker Deployment)
+
+---
+
 ## 🏛️ System Architecture
 
 ```

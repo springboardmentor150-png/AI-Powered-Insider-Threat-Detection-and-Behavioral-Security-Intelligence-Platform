@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Structured Relational Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: itbis-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-itbis_db}
+      POSTGRES_USER: ${POSTGRES_USER:-itbis_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ItbisSecurePassword2026!}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MongoDB Activity Telemetry Store
+  mongodb:
+    image: mongo:6.0
+    container_name: itbis-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ITBIS FastAPI Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: itbis-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-itbis_user}:${POSTGRES_PASSWORD:-ItbisSecurePassword2026!}@postgres:5432/${POSTGRES_DB:-itbis_db}
+      MONGODB_URL: mongodb://mongodb:27017
+      MONGODB_DATABASE: ${MONGODB_DB_NAME:-itbis}
+      JWT_SECRET: ${JWT_SECRET:-itbis-enterprise-production-secret-key-2026}
+      JWT_ALGORITHM: HS256
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend_models:/app/models
+      - backend_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  # ITBIS Next.js Frontend Service
+  frontend:
+    build:
+      context: ./frontend/itbis
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    container_name: itbis-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  backend_models:
+  backend_data:

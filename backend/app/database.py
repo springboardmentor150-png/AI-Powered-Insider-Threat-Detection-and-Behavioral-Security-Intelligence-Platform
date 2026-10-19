@@ -1,16 +1,33 @@
+import os
+import logging
+from fastapi import HTTPException, status
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
-from pymongo import MongoClient
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import sessionmaker
 
-# =========================
-# SQLite Database
-# =========================
+from pathlib import Path
 
-DATABASE_URL = "sqlite:///./itbis.db"
+logger = logging.getLogger("itbis.database")
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_DB_FILE = BASE_DIR / "itbis.db"
+
+raw_db_url = os.getenv("DATABASE_URL")
+if not raw_db_url or not raw_db_url.strip():
+    DATABASE_URL = f"sqlite:///{DEFAULT_DB_FILE.as_posix()}"
+else:
+    raw_db_url = raw_db_url.strip()
+    if raw_db_url.startswith("postgres://"):
+        DATABASE_URL = raw_db_url.replace("postgres://", "postgresql://", 1)
+    else:
+        DATABASE_URL = raw_db_url
+
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False}
+    connect_args=connect_args,
+    pool_pre_ping=True
 )
 
 SessionLocal = sessionmaker(
@@ -19,27 +36,18 @@ SessionLocal = sessionmaker(
     bind=engine
 )
 
-Base = declarative_base()
-
 
 def get_db():
     db = SessionLocal()
     try:
         yield db
+    except SQLAlchemyError as e:
+        logger.error(f"Database operational error encountered: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database service temporarily unavailable"
+        )
     finally:
         db.close()
-
-
-# =========================
-# MongoDB Database
-# =========================
-
-MONGO_URL = "mongodb://localhost:27017"
-
-mongo_client = MongoClient(MONGO_URL)
-
-mongo_db = mongo_client["itbis"]
-
-
-def get_mongo_db():
-    return mongo_db
+
