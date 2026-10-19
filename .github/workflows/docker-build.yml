@@ -34,6 +34,9 @@ jobs:
       - name: Run Backend Regression Test Suite
         working-directory: ./backend
         run: |
+          python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          sleep 4
+          curl -f http://127.0.0.1:8000/health || exit 1
           python -m pytest -v
 
       - name: Set up Docker Buildx
