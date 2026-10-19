@@ -1,0 +1,98 @@
+name: Build and Verify ITBIS Docker Containers
+
+on:
+  push:
+    branches: [ master, main, 'student-*' ]
+  pull_request:
+    branches: [ master, main, 'student-*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  backend-test-and-build:
+    name: Backend Test & Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Backend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run Backend Regression Test Suite
+        working-directory: ./backend
+        run: |
+          python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          for i in $(seq 1 30); do
+            if curl -s -f http://127.0.0.1:8000/health > /dev/null 2>&1; then
+              echo "ITBIS Backend is up and healthy!"
+              break
+            fi
+            echo "Waiting for backend startup... ($i/30)"
+            sleep 1
+          done
+          python -m pytest -v
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Backend Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          tags: itbis-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  frontend-test-and-build:
+    name: Frontend Build & Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/itbis/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend/itbis
+        run: npm ci
+
+      - name: Run Frontend Lint & Build
+        working-directory: ./frontend/itbis
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Frontend Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend/itbis
+          file: ./frontend/itbis/Dockerfile
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://localhost:8000
+          push: false
+          tags: itbis-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
