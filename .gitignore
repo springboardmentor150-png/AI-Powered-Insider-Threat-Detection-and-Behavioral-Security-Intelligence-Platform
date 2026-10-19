@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.class
+.venv/
+venv/
+ENV/
+*.sqlite3
+*.db
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+
+# Node & Next.js
+node_modules/
+.next/
+out/
+build/
+dist/
+.vercel/
+*.tsbuildinfo
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Data, Logs & Caches
+backend/data/*.json
+*.log
+.pytest_cache/
+coverage/
+.coverage
+
+# Models
+backend/models/
+*.pkl
+
