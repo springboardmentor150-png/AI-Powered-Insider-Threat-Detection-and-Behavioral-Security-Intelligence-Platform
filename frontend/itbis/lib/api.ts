@@ -6,8 +6,12 @@ export const getApiBaseUrl = (): string => {
     return process.env.NEXT_PUBLIC_API_URL.trim();
   }
   if (typeof window !== 'undefined' && window.location) {
-    const hostname = window.location.hostname;
-    return `${window.location.protocol}//${hostname}:8000`;
+    const { protocol, hostname } = window.location;
+    if (hostname.includes('onrender.com')) {
+      const backendHost = hostname.replace('frontend', 'backend');
+      return `${protocol}//${backendHost}`;
+    }
+    return `${protocol}//${hostname}:8000`;
   }
   return 'http://127.0.0.1:8000';
 };
