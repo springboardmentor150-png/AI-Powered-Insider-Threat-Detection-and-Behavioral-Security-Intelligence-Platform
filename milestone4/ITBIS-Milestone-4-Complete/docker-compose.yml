@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: ./backend
+    ports: ['8000:8000']
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres_db:5432/itbis
+      MONGO_URL: mongodb://mongo_db:27017
+      SECRET_KEY: change-this-in-production
+    depends_on: [postgres_db,mongo_db]
+  frontend:
+    build: ./frontend
+    ports: ['3000:3000']
+    depends_on: [backend]
+  postgres_db:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: itbis
+    ports: ['5432:5432']
+  mongo_db:
+    image: mongo:7
+    ports: ['27017:27017']
